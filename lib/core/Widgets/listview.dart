@@ -54,6 +54,30 @@ class _ListViewWidgetState extends State<ListViewWidget> {
   late String oldUserName, oldPhoneNumber, selectedDoc, uid;
   late String oldItemPrice, oldItemModel, oldItemDescription, oldItemName;
 
+  Future<void> getUserData() async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      final userData = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .get();
+      setState(() {
+        oldUserName = userData['userName'];
+        oldPhoneNumber = userData['userNumber'];
+        oldItemPrice = userData['userName']; // Initialize oldItemPrice here
+        oldItemModel = ''; // Initialize oldItemModel here
+        oldItemDescription = ''; // Initialize oldItemDescription here
+        oldItemName = ''; // Initialize oldItemName here
+      });
+    }
+  }
+  @override
+  void initState() {
+    super.initState();
+    // Initialize uid here
+    uid = FirebaseAuth.instance.currentUser!.uid;
+    getUserData();
+  }
   Future<void> showDialogForUpdateData() async {
     return showDialog(
       context: context,
@@ -222,12 +246,6 @@ class _ListViewWidgetState extends State<ListViewWidget> {
         'userNumber': oldPhoneNumber,
       },
     );
-  }
-  @override
-  void initState() {
-    super.initState();
-    // Initialize uid here
-    uid = FirebaseAuth.instance.currentUser!.uid;
   }
 
   @override
