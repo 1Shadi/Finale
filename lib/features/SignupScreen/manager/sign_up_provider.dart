@@ -172,7 +172,7 @@ class SignupProvider extends ChangeNotifier {
         },
       );
       Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => const HomeScreen()));
+          context, MaterialPageRoute(builder: (context) =>  HomeScreen()));
     } catch (error) {
       setLoading(false);
       showDialog(

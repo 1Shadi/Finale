@@ -1,31 +1,46 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../SearchProduct/search_product.dart';
-import '../../../core/Widgets/global_var.dart';
 import '../../../core/Widgets/listview.dart';
 import '../../ProfileScreen/profile_screen.dart';
 import '../../UploadAdScreen/upload_ad_screen.dart';
-import '../../WelcomeScreen/welcome_screen.dart';
-import '../manager/home_screen_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:geolocator/geolocator.dart';
 
 class HomeScreenBody extends StatefulWidget {
-  final HomeScreenProvider provider;
+  final User user; // Assuming you already have the user object
+  final VoidCallback signOutCallback;
 
-  const HomeScreenBody({super.key, required this.provider});
+  const HomeScreenBody({Key? key, required this.user, required this.signOutCallback}) : super(key: key);
 
   @override
   State<HomeScreenBody> createState() => _HomeScreenBodyState();
 }
 
 class _HomeScreenBodyState extends State<HomeScreenBody> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  late Position? position;
 
   @override
   void initState() {
     super.initState();
-    widget.provider.initializeData();
+    getUserAddress();
+  }
+
+  Future<void> getUserAddress() async {
+    try {
+      Position newPosition = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
+      setState(() {
+        position = newPosition;
+      });
+    } catch (e) {
+      // Handle errors while getting user address
+      if (kDebugMode) {
+        print('Error getting user address: $e');
+      }
+    }
   }
 
   @override
@@ -50,7 +65,7 @@ class _HomeScreenBodyState extends State<HomeScreenBody> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ProfileScreen(sellerId: uid),
+                    builder: (context) => ProfileScreen(sellerId: widget.user.uid),
                   ),
                 );
               },
@@ -73,15 +88,7 @@ class _HomeScreenBodyState extends State<HomeScreenBody> {
               ),
             ),
             TextButton(
-              onPressed: () {
-                _auth.signOut().then((value) {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const WelcomeScreen()),
-                  );
-                });
-              },
+              onPressed: widget.signOutCallback,
               child: const Padding(
                 padding: EdgeInsets.all(10.0),
                 child: Icon(Icons.logout,
@@ -124,25 +131,26 @@ class _HomeScreenBodyState extends State<HomeScreenBody> {
                   itemCount: snapshot.data!.docs.length,
                   itemBuilder: (context, index) {
                     return ListViewWidget(
-                        docId: snapshot.data!.docs[index].id,
-                        itemColor: snapshot.data!.docs[index]['itemColor'],
-                        img1: snapshot.data!.docs[index]['urlImage1'],
-                        img2: snapshot.data!.docs[index]['urlImage2'],
-                        img3: snapshot.data!.docs[index]['urlImage3'],
-                        img4: snapshot.data!.docs[index]['urlImage4'],
-                        img5: snapshot.data!.docs[index]['urlImage5'],
-                        userImg: snapshot.data!.docs[index]['imgPro'],
-                        name: snapshot.data!.docs[index]['userName'],
-                        date: snapshot.data!.docs[index]['time'].toDate(),
-                        userId: snapshot.data!.docs[index]['id'],
-                        itemModel: snapshot.data!.docs[index]['itemModel'],
-                        postId: snapshot.data!.docs[index]['postId'],
-                        itemPrice: snapshot.data!.docs[index]['itemPrice'],
-                        description: snapshot.data!.docs[index]['description'],
-                        lat: snapshot.data!.docs[index]['lat'],
-                        lng: snapshot.data!.docs[index]['lng'],
-                        address: snapshot.data!.docs[index]['address'],
-                        userNumber: snapshot.data!.docs[index]['userNumber']);
+                      docId: snapshot.data!.docs[index].id,
+                      itemColor: snapshot.data!.docs[index]['itemColor'],
+                      img1: snapshot.data!.docs[index]['urlImage1'],
+                      img2: snapshot.data!.docs[index]['urlImage2'],
+                      img3: snapshot.data!.docs[index]['urlImage3'],
+                      img4: snapshot.data!.docs[index]['urlImage4'],
+                      img5: snapshot.data!.docs[index]['urlImage5'],
+                      userImg: snapshot.data!.docs[index]['imgPro'],
+                      name: snapshot.data!.docs[index]['userName'],
+                      date: snapshot.data!.docs[index]['time'].toDate(),
+                      userId: snapshot.data!.docs[index]['id'],
+                      itemModel: snapshot.data!.docs[index]['itemModel'],
+                      postId: snapshot.data!.docs[index]['postId'],
+                      itemPrice: snapshot.data!.docs[index]['itemPrice'],
+                      description: snapshot.data!.docs[index]['description'],
+                      lat: snapshot.data!.docs[index]['lat'],
+                      lng: snapshot.data!.docs[index]['lng'],
+                      address: snapshot.data!.docs[index]['address'],
+                      userNumber: snapshot.data!.docs[index]['userNumber'],
+                    );
                   },
                 );
               } else {
@@ -167,7 +175,7 @@ class _HomeScreenBodyState extends State<HomeScreenBody> {
               ),
             );
           },
-          child: const Icon(Icons.cloud_upload),
+          child: const Icon(Icons.cloud_upload,color: Colors.white),
         ),
       ),
     );

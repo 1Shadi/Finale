@@ -23,7 +23,8 @@ class ListViewWidget extends StatefulWidget {
   final DateTime date;
   final double lat, lng;
 
-  const ListViewWidget({super.key,
+  const ListViewWidget({
+    super.key,
     required this.docId,
     required this.itemColor,
     required this.img1,
@@ -194,10 +195,13 @@ class _ListViewWidgetState extends State<ListViewWidget> {
         .get()
         .then((snapshot) {
       for (int index = 0; index < snapshot.docs.length; index++) {
-        String userProfileNameInPost = snapshot.docs[index]['user'];
+        String userProfileNameInPost = snapshot.docs[index]['userName'];
 
         if (userProfileNameInPost != oldUserName) {
-          FirebaseFirestore.instance.collection('items').doc(snapshot.docs[index].id).update(
+          FirebaseFirestore.instance
+              .collection('items')
+              .doc(snapshot.docs[index].id)
+              .update(
             {
               'userName': oldUserName,
             },
@@ -207,13 +211,23 @@ class _ListViewWidgetState extends State<ListViewWidget> {
     });
   }
 
-  Future<void> _updateUserName(String oldUserName, String oldPhoneNumber) async {
-    await FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser!.uid).update(
+  Future<void> _updateUserName(
+      String oldUserName, String oldPhoneNumber) async {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .update(
       {
         'userName': oldUserName,
         'userNumber': oldPhoneNumber,
       },
     );
+  }
+  @override
+  void initState() {
+    super.initState();
+    // Initialize uid here
+    uid = FirebaseAuth.instance.currentUser!.uid;
   }
 
   @override
@@ -238,31 +252,37 @@ class _ListViewWidgetState extends State<ListViewWidget> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              GestureDetector(
-                onDoubleTap: () {
-                  Navigator.pushReplacement(context,
-                      MaterialPageRoute(builder: (context) =>
-                          ImageSliderScreen(
-                            title: widget.itemModel,
-                            itemColor: widget.itemColor,
-                            userNumber: widget.userNumber,
-                            description: widget.description,
-                            lat: widget.lat,
-                            lng: widget.lng,
-                            address: widget.address,
-                            itemPrice: widget.itemPrice,
-                            urlImage1: widget.img1,
-                            urlImage2: widget.img2,
-                            urlImage3: widget.img3,
-                            urlImage4: widget.img4,
-                            urlImage5: widget.img5,
-
-                          )));
-                  Image.network(
+              SizedBox(
+                height: 200, // Set the desired height
+                child: GestureDetector(
+                  onDoubleTap: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ImageSliderScreen(
+                          title: widget.itemModel,
+                          itemColor: widget.itemColor,
+                          userNumber: widget.userNumber,
+                          description: widget.description,
+                          lat: widget.lat,
+                          lng: widget.lng,
+                          address: widget.address,
+                          itemPrice: widget.itemPrice,
+                          urlImage1: widget.img1,
+                          urlImage2: widget.img2,
+                          urlImage3: widget.img3,
+                          urlImage4: widget.img4,
+                          urlImage5: widget.img5,
+                        ),
+                      ),
+                    );
+                  },
+                  child: Image.network(
                     widget.img1,
                     fit: BoxFit.cover,
-                  );
-                }),
+                  ),
+                ),
+              ),
               const SizedBox(
                 height: 8.0,
               ),
@@ -318,47 +338,50 @@ class _ListViewWidgetState extends State<ListViewWidget> {
                     ),
                     widget.userId != uid
                         ? const Padding(
-                      padding: EdgeInsets.only(right: 50.0),
-                      child: Column(),
-                    )
+                            padding: EdgeInsets.only(right: 50.0),
+                            child: Column(),
+                          )
                         : Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          onPressed: () {
-                            showDialogForUpdateData();
-                          },
-                          icon: const Padding(
-                            padding: EdgeInsets.only(left: 20.0),
-                            child: Icon(
-                              Icons.edit_note,
-                              color: Colors.white,
-                              size: 27,
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () {
-                            FirebaseFirestore.instance.collection('item').doc(widget.postId).delete();
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                onPressed: () {
+                                  showDialogForUpdateData();
+                                },
+                                icon: const Padding(
+                                  padding: EdgeInsets.only(left: 20.0),
+                                  child: Icon(
+                                    Icons.edit_note,
+                                    color: Colors.white,
+                                    size: 27,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: () {
+                                  FirebaseFirestore.instance
+                                      .collection('items')
+                                      .doc(widget.postId)
+                                      .delete();
 
-                            Fluttertoast.showToast(
-                              msg: 'Post has been deleted',
-                              toastLength: Toast.LENGTH_LONG,
-                              backgroundColor: Colors.grey,
-                              fontSize: 18.0,
-                            );
-                          },
-                          icon: const Padding(
-                            padding: EdgeInsets.only(left: 20.0),
-                            child: Icon(
-                              Icons.delete_forever,
-                              size: 22,
-                              color: Colors.white,
-                            ),
+                                  Fluttertoast.showToast(
+                                    msg: 'Post has been deleted',
+                                    toastLength: Toast.LENGTH_LONG,
+                                    backgroundColor: Colors.grey,
+                                    fontSize: 18.0,
+                                  );
+                                },
+                                icon: const Padding(
+                                  padding: EdgeInsets.only(left: 20.0),
+                                  child: Icon(
+                                    Icons.delete_forever,
+                                    size: 22,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
                   ],
                 ),
               ),

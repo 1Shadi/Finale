@@ -16,13 +16,15 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  late String adUserName; // Initialize adUserName with an empty string
+  late String adUserName = ''; // Initialize adUserName with an empty string
   String? adUserImageUrl;
 
   @override
   void initState() {
     super.initState();
     getResult();
+    uid = FirebaseAuth.instance.currentUser!.uid;
+
   }
 
   void getResult() {
@@ -44,8 +46,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
     }
   }
-
-
 
   Widget _buildUserImage() {
     if (adUserImageUrl != null && adUserImageUrl!.isNotEmpty) {
@@ -96,7 +96,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onPressed: () {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const HomeScreen()),
+                MaterialPageRoute(builder: (context) => HomeScreen()),
               );
             },
           ),
@@ -104,7 +104,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               _buildUserImage(),
               const SizedBox(width: 10),
-              Text(adUserName,style: const TextStyle(color: Colors.black)),
+              Text(adUserName, style: const TextStyle(color: Colors.black)),
             ],
           ),
           flexibleSpace: Container(
@@ -119,7 +119,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ),
-        body: StreamBuilder<QuerySnapshot>(
+        body:
+        StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
               .collection('items')
               .where('id', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
@@ -144,9 +145,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   itemCount: data.docs.length,
                   itemBuilder: (BuildContext context, int index) {
                     final doc = data.docs[index];
+                    final itemColor = doc.get('itemColor'); // Access the field safely
                     return ListViewWidget(
                       docId: doc.id,
-                      itemColor: doc['itemColor'],
+                      itemColor: itemColor ?? 'No color', // Provide a default value if itemColor is null
                       img1: doc['urlImage1'],
                       img2: doc['urlImage2'],
                       img3: doc['urlImage3'],

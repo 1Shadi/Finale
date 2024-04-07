@@ -8,11 +8,8 @@ class SignupScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => SignupProvider(),
-      child: const Scaffold(
-        body: SignupBody(),
-      ),
+    return Scaffold(
+      body: SignupBody(),
     );
   }
 }

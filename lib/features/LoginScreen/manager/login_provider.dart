@@ -47,7 +47,7 @@ class LoginProvider extends ChangeNotifier {
         // ignore: use_build_context_synchronously
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          MaterialPageRoute(builder: (context) =>  HomeScreen()),
         );
       }
     } catch (error) {

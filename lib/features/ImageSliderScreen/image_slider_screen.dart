@@ -84,7 +84,7 @@ class _ImageSliderScreenState extends State<ImageSliderScreen> with SingleTicker
             onPressed: () {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const HomeScreen()),
+                MaterialPageRoute(builder: (context) =>  HomeScreen()),
               );
             },
             icon: const Icon(Icons.arrow_back, color: Colors.teal),
