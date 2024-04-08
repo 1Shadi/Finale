@@ -7,81 +7,76 @@ import '../../core/Widgets/listview.dart';
 import '../HomeScreen/home_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-  final String sellerId;
 
-  ProfileScreen({Key? key, required this.sellerId}) : super(key: key);
+  String sellerId;
+
+  ProfileScreen({super.key, required this.sellerId});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  late String adUserName = ''; // Initialize adUserName with an empty string
-  String? adUserImageUrl;
+
+  _buildBackButton()
+  {
+    return IconButton(
+      icon: const Icon(Icons.arrow_back, color: Colors.white,),
+      onPressed: ()
+      {
+        Navigator.pushReplacement(context,
+            MaterialPageRoute(builder: (context) => const HomeScreen()));
+      },
+    );
+  }
+
+  _buildUserImage()
+  {
+    return Container(
+      width: 50,
+      height: 40,
+      decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          image: DecorationImage(
+              image: NetworkImage(adUserImageUrl),
+              fit: BoxFit.fill
+          )
+      ),
+    );
+  }
+
+  getResult() {
+    FirebaseFirestore.instance
+        .collection('items')
+        .where('id', isEqualTo: widget.sellerId)
+        .where('status', isEqualTo: 'approved')
+        .get()
+        .then((results) {
+      setState(() {
+        items = results;
+        adUserName = items!.docs[0].get('userName');
+        adUserImageUrl = items!.docs[0].get('imgPro');
+
+      });
+    });
+  }
 
   @override
   void initState() {
+    // TODO: implement initState
     super.initState();
     getResult();
-    uid = FirebaseAuth.instance.currentUser!.uid;
-
   }
-
-  void getResult() {
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser != null) {
-      FirebaseFirestore.instance
-          .collection('users')
-          .doc(currentUser.uid)
-          .get()
-          .then((DocumentSnapshot snapshot) {
-        setState(() {
-          if (snapshot.exists) {
-            adUserName = snapshot['userName'];
-            adUserImageUrl = snapshot['userImage'];
-          }
-        });
-      }).catchError((error) {
-        print("Error fetching user data: $error");
-      });
-    }
-  }
-
-  Widget _buildUserImage() {
-    if (adUserImageUrl != null && adUserImageUrl!.isNotEmpty) {
-      return Container(
-        width: 50,
-        height: 40,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          image: DecorationImage(
-            image: NetworkImage(adUserImageUrl!),
-            fit: BoxFit.fill,
-          ),
-        ),
-      );
-    } else {
-      // If adUserImageUrl is null or empty, show a default image
-      return Container(
-        width: 50,
-        height: 40,
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          image: DecorationImage(
-            image: AssetImage('assets/images/logo.png'), // Adjust the asset path accordingly
-            fit: BoxFit.fill,
-          ),
-        ),
-      );
-    }
-  }
-
+  QuerySnapshot? items;
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Colors.deepOrange, Colors.teal],
+          colors: [
+            Colors.deepOrange,
+            Colors.teal,
+          ],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
           stops: [0.0, 1.0],
@@ -91,26 +86,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => HomeScreen()),
-              );
-            },
-          ),
+          leading: _buildBackButton(),
           title: Row(
             children: [
               _buildUserImage(),
-              const SizedBox(width: 10),
-              Text(adUserName, style: const TextStyle(color: Colors.black)),
+              const SizedBox(width: 10,),
+              Text(adUserName),
             ],
           ),
           flexibleSpace: Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.deepOrange, Colors.teal],
+                colors: [
+                  Colors.deepOrange,
+                  Colors.teal,
+                ],
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
                 stops: [0.0, 1.0],
@@ -118,62 +108,62 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
           ),
-        ),
-        body:
-        StreamBuilder<QuerySnapshot>(
+        )
+        ,
+        body: StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
               .collection('items')
-              .where('id', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
-              .orderBy('time', descending: true)
+              .where('id', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
+              // .orderBy('time', descending: true)
               .snapshots(),
-          builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+          builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              return Center(
-                child: Text(
-                  'Something went wrong',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30),
-                ),
-              );
-            } else {
-              final data = snapshot.data;
-              if (data == null || data.docs.isEmpty) {
-                return const Center(child: Text('There is no task'));
-              } else {
+            } else if (snapshot.connectionState == ConnectionState.active) {
+              if (snapshot.hasData) {
+                final items = snapshot.data!.docs;
                 return ListView.builder(
-                  itemCount: data.docs.length,
+                  itemCount: snapshot.data!.docs.length,
                   itemBuilder: (BuildContext context, int index) {
-                    final doc = data.docs[index];
-                    final itemColor = doc.get('itemColor'); // Access the field safely
+                    final item = items[index].data() as Map<String, dynamic>;
                     return ListViewWidget(
-                      docId: doc.id,
-                      itemColor: itemColor ?? 'No color', // Provide a default value if itemColor is null
-                      img1: doc['urlImage1'],
-                      img2: doc['urlImage2'],
-                      img3: doc['urlImage3'],
-                      img4: doc['urlImage4'],
-                      img5: doc['urlImage5'],
-                      userImg: doc['imgPro'],
-                      name: doc['userName'],
-                      date: doc['time'].toDate(),
-                      userId: doc['id'],
-                      itemModel: doc['itemModel'],
-                      postId: doc['postId'],
-                      itemPrice: doc['itemPrice'],
-                      description: doc['description'],
-                      lat: doc['lat'],
-                      lng: doc['lng'],
-                      address: doc['address'],
-                      userNumber: doc['userNumber'],
+                      docId: items[index].id,
+                      itemColor: item['itemColor'] ?? '',
+                      img1: item['urlImage1'] ?? '',
+                      img2: item['urlImage2'] ?? '',
+                      img3: item['urlImage3'] ?? '',
+                      img4: item['urlImage4'] ?? '',
+                      img5: item['urlImage5'] ?? '',
+                      userImg: item['imgPro'] ?? '',
+                      name: item['userName'] ?? '',
+                      date: item['time']?.toDate() ?? DateTime.now(),
+                      userId: item['id'] ?? '',
+                      itemModel: item['itemModel'] ?? '',
+                      postId: item['postId'] ?? '',
+                      itemPrice: item['itemPrice'] ?? '',
+                      description: item['description'] ?? '',
+                      lat: item['lat'] ?? 0.0,
+                      lng: item['lng'] ?? 0.0,
+                      address: item['address'] ?? '',
+                      userNumber: item['userNumber'] ?? '',
                     );
                   },
                 );
+              } else {
+                return const Center(
+                  child: Text('No items found'),
+                );
               }
+            } else {
+              return const Center(
+                child: Text('Something went wrong'),
+              );
             }
           },
+
         ),
       ),
+
     );
   }
 }

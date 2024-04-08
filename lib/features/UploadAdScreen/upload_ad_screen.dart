@@ -13,7 +13,7 @@ import '../../core/DialogBox/loading_dialog.dart';
 import '../../core/Widgets/global_var.dart';
 
 class UploadAdScreen extends StatefulWidget {
-  const UploadAdScreen({Key? key}) : super(key: key);
+  const UploadAdScreen({super.key});
 
   @override
   State<UploadAdScreen> createState() => _UploadAdScreenState();
