@@ -5,20 +5,21 @@ import '../core/Widgets/listview.dart';
 import '../features/HomeScreen/home_screen.dart';
 
 class SearchProduct extends StatefulWidget {
-  const SearchProduct({super.key});
+  const SearchProduct({Key? key}) : super(key: key);
 
   @override
   State<SearchProduct> createState() => _SearchProductState();
 }
 
 class _SearchProductState extends State<SearchProduct> {
-
   final TextEditingController _searchQueryController = TextEditingController();
-String searchQuery = '';
+  final TextEditingController _minPriceController = TextEditingController();
+  final TextEditingController _maxPriceController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
+  String searchQuery = '';
   bool _isSearching = false;
 
-  Widget _buildSearchField()
-  {
+  Widget _buildSearchField() {
     return TextField(
       controller: _searchQueryController,
       autofocus: true,
@@ -29,183 +30,256 @@ String searchQuery = '';
       ),
       onChanged: (query) => updateSearchQuery(query),
     );
+  }
 
-}
+  updateSearchQuery(String newQuery) {
+    setState(() {
+      searchQuery = newQuery;
+      print(searchQuery);
+    });
+  }
 
-updateSearchQuery(String newQuery)
-{
-  setState(() {
-    searchQuery = newQuery;
-    print(searchQuery);
-  });
-}
-
-List<Widget> _buildActions()
-{
-  if(_isSearching)
-    {
-      return <Widget>
-      [
+  List<Widget> _buildActions() {
+    if (_isSearching) {
+      return <Widget>[
         IconButton(
           icon: const Icon(Icons.clear),
-          onPressed: ()
-          {
-            if(_searchQueryController.text.isEmpty)
-              {
-                Navigator.pop(context);
-                return;
-              }
+          onPressed: () {
             _clearSearchQuery();
+          },
+        ),
+        IconButton(
+          icon: Icon(Icons.filter_alt),
+          onPressed: () async {
+            await showDialog<void>(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: const Text('Filter'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      TextFormField(
+                        controller: _minPriceController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: 'Min Price',
+                        ),
+                      ),
+                      TextFormField(
+                        controller: _maxPriceController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: 'Max Price',
+                        ),
+                      ),
+                      TextFormField(
+                        controller: _addressController,
+                        decoration: InputDecoration(
+                          labelText: 'Address',
+                        ),
+                      ),
+                    ],
+                  ),
+                  actions: <Widget>[
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        _startSearch();
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Apply'),
+                    ),
+                  ],
+                );
+              },
+            );
           },
         ),
       ];
     }
-  return <Widget>
-  [
-    IconButton(
-      icon: const Icon(Icons.search),
-      onPressed: _startSearch,
-    ),
-  ];
-}
+    return <Widget>[
+      IconButton(
+        icon: const Icon(Icons.search),
+        onPressed: _startSearch,
+      ),
+    ];
+  }
 
-_clearSearchQuery()
-{
-  setState(() {
-    _searchQueryController.clear();
-    updateSearchQuery('');
-  });
-}
+  _clearSearchQuery() {
+    setState(() {
+      _searchQueryController.clear();
+      _minPriceController.clear();
+      _maxPriceController.clear();
+      _addressController.clear();
+      _isSearching = false;
+    });
+  }
 
-_startSearch()
-{
-  ModalRoute.of(context)!.addLocalHistoryEntry(LocalHistoryEntry(onRemove: _stopSearching));
+  _startSearch() {
+    setState(() {
+      _isSearching = true;
+    });
+  }
 
-}
+  _buildTitle(BuildContext context) {
+    return const Text('Search Product');
+  }
 
-_stopSearching()
-{
-  _clearSearchQuery();
-  setState(() {
-    _isSearching = false;
-  });
-}
-
-_buildTitle(BuildContext context)
-{
-  return const Text('Search Product');
-}
-
-_buildBackButton()
-{
-  return IconButton(
-      icon: const Icon(Icons.arrow_back, color: Colors.white,),
-  onPressed: ()
-  {
-    Navigator.pushReplacement(context,
-  MaterialPageRoute(builder: (context) => HomeScreen()));
-});
-}
+  _buildBackButton() {
+    return IconButton(
+      icon: const Icon(
+        Icons.arrow_back,
+        color: Colors.white,
+      ),
+      onPressed: () {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-        decoration: const BoxDecoration(
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
-        colors: [
-        Colors.deepOrange,
-        Colors.teal,
-        ],
-        begin: Alignment.centerLeft,
-        end: Alignment.centerRight,
-        stops: [0.0, 1.0],
-        tileMode: TileMode.clamp,
-    ),
-    ),
-
-    child: Scaffold(
-    backgroundColor: Colors.transparent,
-    appBar: AppBar(
-    leading: _isSearching ? const BackButton() : _buildBackButton(),
-    title: _isSearching ? _buildSearchField() : _buildTitle(context),
-    actions: _buildActions(),
-    flexibleSpace: Container(
-    decoration: const BoxDecoration(
-    gradient: LinearGradient(
-    colors: [
-    Colors.deepOrange,
-    Colors.teal,
-    ],
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
-    stops: [0.0, 1.0],
-    tileMode: TileMode.clamp,
-    ),
-    ),
-
+          colors: [
+            Colors.deepOrange,
+            Colors.teal,
+          ],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          stops: [0.0, 1.0],
+          tileMode: TileMode.clamp,
+        ),
       ),
-    ),
-    body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-    stream: FirebaseFirestore.instance
-    .collection('items')
-    .where('itemModel', isGreaterThanOrEqualTo: _searchQueryController.text.trim())
-    .where('status', isEqualTo: 'approved')
-        .snapshots(),
-    builder: (context, AsyncSnapshot snapshot)
-    {
-    if(snapshot.connectionState == ConnectionState.waiting)
-    {
-    return const Center(child: CircularProgressIndicator(),);
-    }
-    else if(snapshot.connectionState == ConnectionState.active)
-    {
-    if(snapshot.data!.docs.isNotEmpty)
-    {
-    return ListView.builder(
-    itemCount: snapshot.data!.docs.length,
-    itemBuilder: (BuildContext context, int index)
-    {
-    return ListViewWidget(
-    docId: snapshot.data!.docs[index].id,
-    itemColor: snapshot.data!.docs[index]['itemColor'],
-    img1: snapshot.data!.docs[index]['urlImage1'],
-    img2:snapshot.data!.docs[index]['urlImage2'],
-    img3: snapshot.data!.docs[index]['urlImage3'],
-    img4:snapshot.data!.docs[index]['urlImage4'],
-    img5: snapshot.data!.docs[index]['urlImage5'],
-    userImg: snapshot.data!.docs[index]['imgPro'],
-    name: snapshot.data!.docs[index]['userName'],
-    date: snapshot.data!.docs[index]['time'].todate(),
-    userId: snapshot.data!.docs[index]['id'],
-    itemModel: snapshot.data!.docs[index]['itemModel'],
-    postId: snapshot.data!.docs[index]['postId'],
-    itemPrice: snapshot.data!.docs[index]['itemPrice'],
-    description: snapshot.data!.docs[index]['description'],
-    lat: snapshot.data!.docs[index]['lat'],
-    lng: snapshot.data!.docs[index]['lng'],
-    address: snapshot.data!.docs[index]['address'],
-    userNumber: snapshot.data!.docs[index]['userNumber']);
-
-
-
-    },
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          leading: _isSearching ? const BackButton() : _buildBackButton(),
+          title: _isSearching ? _buildSearchField() : _buildTitle(context),
+          actions: _buildActions(),
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.deepOrange,
+                  Colors.teal,
+                ],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                stops: [0.0, 1.0],
+                tileMode: TileMode.clamp,
+              ),
+            ),
+          ),
+        ),
+        body: _isSearching
+            ? _buildFilteredResults()
+            : const Center(
+          child: Text('Press the search button to start searching'),
+        ),
+      ),
     );
-    }
-    else
-    {
-    return const Center(
-    child: Text('There is no tasks'),
-    );
-    }
-    }
-    return const Center(
-    child: Text(
-    'Something went wrong',
-    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30),
+  }
 
-    ),
+  Widget _buildFilteredResults() {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('items')
+          .where('status', isEqualTo: 'approved')
+          .snapshots(),
+      builder: (context,
+          AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        } else if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+          final filteredDocs = snapshot.data!.docs.where((doc) {
+            final itemPrice = doc['itemPrice'] != null
+                ? double.tryParse(doc['itemPrice'].toString())
+                : null;
+            final address = doc['address'] as String? ?? '';
+            if (itemPrice != null &&
+                _minPriceController.text.isNotEmpty &&
+                _maxPriceController.text.isNotEmpty &&
+                _addressController.text.isNotEmpty) {
+              final minPrice = double.parse(_minPriceController.text);
+              final maxPrice = double.parse(_maxPriceController.text);
+              return itemPrice >= minPrice &&
+                  itemPrice <= maxPrice &&
+                  address.toLowerCase().contains(_addressController.text.toLowerCase());
+            } else if (_minPriceController.text.isNotEmpty &&
+                _maxPriceController.text.isNotEmpty) {
+              final minPrice = double.parse(_minPriceController.text);
+              final maxPrice = double.parse(_maxPriceController.text);
+              return itemPrice != null &&
+                  itemPrice >= minPrice &&
+                  itemPrice <= maxPrice;
+            } else if (_minPriceController.text.isNotEmpty) {
+              final minPrice = double.parse(_minPriceController.text);
+              return itemPrice != null && itemPrice >= minPrice;
+            } else if (_maxPriceController.text.isNotEmpty) {
+              final maxPrice = double.parse(_maxPriceController.text);
+              return itemPrice != null && itemPrice <= maxPrice;
+            } else if (_addressController.text.isNotEmpty) {
+              return address.toLowerCase().contains(_addressController.text.toLowerCase());
+            }
+            return true; // Return true for documents with null or invalid itemPrice
+          }).toList();
+
+          if (filteredDocs.isNotEmpty) {
+            return ListView.builder(
+              itemCount: filteredDocs.length,
+              itemBuilder: (BuildContext context, int index) {
+                final item = filteredDocs[index].data();
+                final itemColor =
+                item['itemColor']; // Get the value of 'itemColor' field
+                return ListViewWidget(
+                  docId: filteredDocs[index].id,
+                  itemColor: itemColor is String
+                      ? itemColor
+                      : '', // Check if 'itemColor' is a string
+                  img1: item['urlImage1'],
+                  img2: item['urlImage2'],
+                  img3: item['urlImage3'],
+                  img4: item['urlImage4'],
+                  img5: item['urlImage5'],
+                  userImg: item['imgPro'],
+                  name: item['userName'],
+                  date: item['time'].toDate(),
+                  userId: item['id'],
+                  itemModel: item['itemModel'],
+                  postId: item['postId'],
+                  itemPrice: item['itemPrice'],
+                  description: item['description'],
+                  lat: (item['lat'] as num?)?.toDouble() ?? 0.0,
+                  lng: (item['lng'] as num?)?.toDouble() ?? 0.0,
+                  address: item['address'],
+                  userNumber: item['userNumber'],
+                );
+              },
+            );
+          } else {
+            return const Center(
+              child: Text('No items match the search query'),
+            );
+          }
+        } else {
+          return const Center(
+            child: Text('There are no items'),
+          );
+        }
+      },
     );
-    },
-    ),),);
   }
 }

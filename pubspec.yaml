@@ -52,6 +52,7 @@ dependencies:
   url_launcher: ^6.2.5
   carousel_slider: ^4.2.1
   provider: ^6.1.2
+  permission_handler: ^11.3.1
 
 
 

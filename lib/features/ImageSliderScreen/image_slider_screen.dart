@@ -84,7 +84,7 @@ class _ImageSliderScreenState extends State<ImageSliderScreen> with SingleTicker
             onPressed: () {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) =>  HomeScreen()),
+                MaterialPageRoute(builder: (context) =>  const HomeScreen()),
               );
             },
             icon: const Icon(Icons.arrow_back, color: Colors.teal),
@@ -183,23 +183,29 @@ class _ImageSliderScreenState extends State<ImageSliderScreen> with SingleTicker
                 child: ConstrainedBox(
                   constraints: const BoxConstraints.tightFor(width: 368),
                   child: ElevatedButton(
-                    onPressed: ()
-                    async
-                    {
+                    onPressed: () async {
                       double latitude = widget.lat;
                       double longitude = widget.lng;
 
-                      url = 'https://www.google.com/maps/search/?api=1&query=$latitude, $longitude';
-                      if(await canLaunchUrl(Uri.parse(url!)))
-                        {
-                          await launchUrl(Uri.parse(url!));
+                      String url = 'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude';
+                      try {
+                        if (await canLaunch(url)) {
+                          await launch(url);
+                        } else {
+                          // Show snackbar or dialog indicating the issue with launching the URL
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                            content: Text("Could not open map. Please check your settings."),
+                          ));
                         }
-                      else
-                        {
-                          throw 'Could not open map';
-                        }
-
+                      } catch (e) {
+                        print("Error launching URL: $e");
+                        // Show snackbar or dialog indicating the error
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                          content: Text("An error occurred while opening the map."),
+                        ));
+                      }
                     },
+
                     style: ButtonStyle(
                       backgroundColor: MaterialStateProperty.all(Colors.black54,),
                     ),

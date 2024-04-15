@@ -32,6 +32,7 @@ class _UploadAdScreenState extends State<UploadAdScreen> {
   String itemModel = '';
   String itemWeight = '';
   String description = '';
+  String address = '';
   // Define variables for user's location
   double? latitude;
   double? longitude;
@@ -200,6 +201,16 @@ class _UploadAdScreenState extends State<UploadAdScreen> {
                     });
                   },
                 ),
+                const SizedBox(height: 5.0),TextField(
+                  decoration: const InputDecoration(
+                    hintText: 'Enter the address',
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      address = value;
+                    });
+                  },
+                ),
                 const SizedBox(height: 5.0),
                 TextField(
                   decoration: const InputDecoration(
@@ -245,7 +256,7 @@ class _UploadAdScreenState extends State<UploadAdScreen> {
                           'imgPro': userImageUrl,
                           'lst': latitude,
                           'lng': longitude,
-                          'address': completeAddress,
+                          'address': address,
                           'time': DateTime.now(),
                           'status': 'approved',
                         });

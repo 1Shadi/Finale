@@ -62,7 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 );
-                getMyData(); // Refresh user data after returning from profile screen
+                await getMyData(); // Refresh user data after returning from profile screen
               },
               icon: const Padding(
                 padding: EdgeInsets.all(10.0),
