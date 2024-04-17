@@ -13,7 +13,7 @@ import '../../core/DialogBox/loading_dialog.dart';
 import '../../core/Widgets/global_var.dart';
 
 class UploadAdScreen extends StatefulWidget {
-  const UploadAdScreen({super.key});
+  const UploadAdScreen({Key? key}) : super(key: key);
 
   @override
   State<UploadAdScreen> createState() => _UploadAdScreenState();
@@ -33,7 +33,6 @@ class _UploadAdScreenState extends State<UploadAdScreen> {
   String itemWeight = '';
   String description = '';
   String address = '';
-  // Define variables for user's location
   double? latitude;
   double? longitude;
 
@@ -42,7 +41,7 @@ class _UploadAdScreenState extends State<UploadAdScreen> {
     final pickedFile = await picker.pickImage(source: source);
     if (pickedFile != null) {
       setState(() {
-        _image.add(File(pickedFile.path)); // Add picked image to _image list
+        _image.add(File(pickedFile.path));
       });
     }
   }
@@ -88,14 +87,11 @@ class _UploadAdScreenState extends State<UploadAdScreen> {
   void initState() {
     super.initState();
     getNameOfUser();
-    // Initialize user's location
     getLocation();
   }
 
-  // Method to get user's location
   void getLocation() {
     // Implement the logic to retrieve user's location coordinates
-    // For example, you can use a location plugin like geolocator
     // Set the latitude and longitude variables accordingly
   }
 
@@ -126,7 +122,7 @@ class _UploadAdScreenState extends State<UploadAdScreen> {
             ),
           ),
           title: Text(
-            next ? "Please write products info" : "Choose product's image",
+            next ? "Please write product info" : "Choose product image(s)",
             style: const TextStyle(
               color: Colors.black54,
               fontFamily: 'Signatra',
@@ -138,14 +134,14 @@ class _UploadAdScreenState extends State<UploadAdScreen> {
                 ? Container()
                 : ElevatedButton(
               onPressed: () {
-                if (_image.length == 5) {
+                if (_image.isNotEmpty) {
                   setState(() {
                     uploading = true;
                     next = true;
                   });
                 } else {
                   Fluttertoast.showToast(
-                    msg: 'Please select 5 images only.',
+                    msg: 'Please select product images',
                     gravity: ToastGravity.CENTER,
                   );
                 }
@@ -201,7 +197,8 @@ class _UploadAdScreenState extends State<UploadAdScreen> {
                     });
                   },
                 ),
-                const SizedBox(height: 5.0),TextField(
+                const SizedBox(height: 5.0),
+                TextField(
                   decoration: const InputDecoration(
                     hintText: 'Enter the address',
                   ),
@@ -248,11 +245,21 @@ class _UploadAdScreenState extends State<UploadAdScreen> {
                           'itemModel': itemModel,
                           'itemWeight': itemWeight,
                           'description': description,
-                          'urlImage1': urlslist[0].toString(),
-                          'urlImage2': urlslist[1].toString(),
-                          'urlImage3': urlslist[2].toString(),
-                          'urlImage4': urlslist[3].toString(),
-                          'urlImage5': urlslist[4].toString(),
+                          'urlImage1': urlslist.isNotEmpty
+                              ? urlslist[0].toString()
+                              : '',
+                          'urlImage2': urlslist.length >= 2
+                              ? urlslist[1].toString()
+                              : '',
+                          'urlImage3': urlslist.length >= 3
+                              ? urlslist[2].toString()
+                              : '',
+                          'urlImage4': urlslist.length >= 4
+                              ? urlslist[3].toString()
+                              : '',
+                          'urlImage5': urlslist.length >= 5
+                              ? urlslist[4].toString()
+                              : '',
                           'imgPro': userImageUrl,
                           'lst': latitude,
                           'lng': longitude,
@@ -276,7 +283,7 @@ class _UploadAdScreenState extends State<UploadAdScreen> {
                     child: const Text(
                       'Upload',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: Colors.black,
                       ),
                     ),
                   ),
@@ -304,7 +311,6 @@ class _UploadAdScreenState extends State<UploadAdScreen> {
                         !uploading
                             ? chooseImage(ImageSource.gallery)
                             : null;
-                        // Add functionality for adding images from gallery
                       },
                     ),
                   )
@@ -334,8 +340,7 @@ class _UploadAdScreenState extends State<UploadAdScreen> {
                   ),
                   CircularProgressIndicator(
                     value: val,
-                    valueColor:
-                    const AlwaysStoppedAnimation<Color>(
+                    valueColor: const AlwaysStoppedAnimation<Color>(
                       Colors.green,
                     ),
                   ),

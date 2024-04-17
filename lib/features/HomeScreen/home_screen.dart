@@ -20,15 +20,29 @@ class _HomeScreenState extends State<HomeScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
+  // void initState() {
+  //   super.initState();
+  //   uid = FirebaseAuth.instance.currentUser!.uid;
+  //   userEmail = FirebaseAuth.instance.currentUser!.email!;
+  //   getMyData();
+  // }
+  @override
   void initState() {
     super.initState();
-    uid = FirebaseAuth.instance.currentUser!.uid;
-    userEmail = FirebaseAuth.instance.currentUser!.email!;
-    getMyData();
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      uid = currentUser.uid;
+      userEmail = currentUser.email!;
+      getMyData();
+    } else {
+      // Handle the case where the user is not authenticated
+      // For example, redirect to the login screen or show an error message
+    }
   }
 
   Future<void> getMyData() async {
-    final userData = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+    final userData =
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
     setState(() {
       userImageUrl = userData['userImage'];
       getUserName = userData['userName'];
@@ -73,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) =>  SearchProduct()),
+                  MaterialPageRoute(builder: (context) => const SearchProduct()),
                 );
               },
               icon: const Padding(
@@ -86,7 +100,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 await _auth.signOut();
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+                  MaterialPageRoute(
+                      builder: (context) => const WelcomeScreen()),
                 );
               },
               icon: const Padding(
@@ -157,20 +172,194 @@ class _HomeScreenState extends State<HomeScreen> {
             }
           },
         ),
-        floatingActionButton: FloatingActionButton(
-          tooltip: 'Add Post',
-          backgroundColor: Colors.black54,
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const UploadAdScreen(),
+        floatingActionButton: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: FloatingActionButton(
+                tooltip: 'Add Post',
+                backgroundColor: Colors.black54,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const UploadAdScreen(),
+                    ),
+                  );
+                },
+                child: const Icon(Icons.cloud_upload, color: Colors.white),
               ),
-            );
-          },
-          child: const Icon(Icons.cloud_upload, color: Colors.white),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: FloatingActionButton(
+                tooltip: 'Add Post',
+                backgroundColor: Colors.black54,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ChatScreen(),
+                    ),
+                  );
+                },
+                child: const Icon(Icons.chat, color: Colors.white),
+              ),
+            ),
+          ],
         ),
       ),
     );
+  }
+}
+
+class ChatScreen extends StatefulWidget {
+  const ChatScreen({Key? key}) : super(key: key);
+
+  @override
+  _ChatScreenState createState() => _ChatScreenState();
+}
+
+class _ChatScreenState extends State<ChatScreen> {
+  final TextEditingController _messageController = TextEditingController();
+  late String currentUser; // Store the current user's ID
+  late String currentUserName; // Store the current user's name
+
+  @override
+  void initState() {
+    super.initState();
+    currentUser = FirebaseAuth.instance.currentUser!.uid;
+    getCurrentUserName();
+  }
+
+  Future<void> getCurrentUserName() async {
+    // Retrieve the current user's name from Firestore
+    final userData = await FirebaseFirestore.instance.collection('users').doc(currentUser).get();
+    setState(() {
+      currentUserName = userData['userName'];
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Chat Screen'),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: StreamBuilder(
+              stream: FirebaseFirestore.instance
+                  .collection('messages')
+                  .orderBy('timestamp', descending: true)
+                  .snapshots(),
+              builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
+
+                final messages = snapshot.data!.docs;
+                return ListView.builder(
+                  reverse: true,
+                  itemCount: messages.length,
+                  itemBuilder: (context, index) {
+                    final message = messages[index].data() as Map<String, dynamic>;
+                    final sender = message['sender'];
+                    final text = message['text'];
+                    final isCurrentUser = sender == currentUser;
+
+                    return FutureBuilder<DocumentSnapshot>(
+                      future: FirebaseFirestore.instance.collection('users').doc(sender).get(),
+                      builder: (context, AsyncSnapshot<DocumentSnapshot> userSnapshot) {
+                        if (userSnapshot.connectionState == ConnectionState.waiting) {
+                          return const CircularProgressIndicator();
+                        }
+
+                        if (!userSnapshot.hasData || userSnapshot.data == null) {
+                          return const SizedBox(); // Return an empty widget if data is null
+                        }
+
+                        final senderData = userSnapshot.data!.data() as Map<String, dynamic>;
+                        final senderName = senderData['userName'];
+
+                        return Align(
+                          alignment: isCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
+                          child: Column(
+                            crossAxisAlignment: isCurrentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                                padding: const EdgeInsets.all(8.0),
+                                decoration: BoxDecoration(
+                                  color: isCurrentUser ? Colors.blue : Colors.black54,
+                                  borderRadius: BorderRadius.circular(12.0),
+                                ),
+                                child: Text(
+                                  text,
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                child: Text(
+                                  isCurrentUser ? 'You' : senderName,
+                                  style: TextStyle(
+                                    color: isCurrentUser ? Colors.blue : Colors.black54,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _messageController,
+                    decoration: const InputDecoration(
+                      hintText: 'Enter your message...',
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.send),
+                  onPressed: () {
+                    _sendMessage();
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _sendMessage() {
+    String messageText = _messageController.text.trim();
+
+    if (messageText.isNotEmpty) {
+      FirebaseFirestore.instance.collection('messages').add({
+        'text': messageText,
+        'sender': currentUser,
+        'timestamp': Timestamp.now(),
+      });
+
+      // Clear the message input field after sending
+      _messageController.clear();
+    }
   }
 }

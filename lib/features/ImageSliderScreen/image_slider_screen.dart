@@ -153,13 +153,6 @@ class _ImageSliderScreenState extends State<ImageSliderScreen> with SingleTicker
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.brush_outlined),
-                        const SizedBox(width: 10.0),
-                        Text(widget.itemColor),
-                      ],
-                    ),
-                    Row(
-                      children: [
                         const Icon(Icons.phone_android),
                         const SizedBox(width: 10.0),
                         Text(widget.userNumber),

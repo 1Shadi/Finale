@@ -190,6 +190,8 @@ class EditProfileScreen extends StatefulWidget {
   _EditProfileScreenState createState() => _EditProfileScreenState();
 }
 
+
+
 class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _nameController;
   File? _image;
@@ -197,21 +199,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late String oldUserPhotoUrl;
   bool _isUpdating = false;
 
-
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: adUserName);
+    oldUserPhotoUrl = ''; // Initialize oldUserPhotoUrl
     FirebaseFirestore.instance
         .collection('items')
         .where('id', isEqualTo: widget.sellerId)
         .where('status', isEqualTo: 'approved')
         .get()
         .then((results) {
-      oldUserPhotoUrl = results!.docs[0].get('imgPro');
+      setState(() {
+        oldUserPhotoUrl = results!.docs[0].get('imgPro');
+      });
     });
   }
-
   @override
   void dispose() {
     _nameController.dispose();
@@ -219,20 +222,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   void _getFromCamera() async {
-    XFile? pickedFile =
-        await ImagePicker().pickImage(source: ImageSource.camera);
-    _cropImage(pickedFile!.path);
+    XFile? pickedFile = await ImagePicker().pickImage(source: ImageSource.camera);
+    if (pickedFile != null) {
+      _cropImage(pickedFile.path);
+    }
     Navigator.pop(context);
   }
 
   void _getFromGallery() async {
-    XFile? pickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
-    _cropImage(pickedFile!.path);
+    XFile? pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      _cropImage(pickedFile.path);
+    }
     Navigator.pop(context);
   }
 
-  void _cropImage(filePath) async {
+  void _cropImage(String filePath) async {
     CroppedFile? croppedImage = await ImageCropper().cropImage(
       sourcePath: filePath,
       maxHeight: 1080,
@@ -250,9 +255,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       String uid = FirebaseAuth.instance.currentUser!.uid;
       String fileName = 'profile_picture_$uid.jpg';
 
-      firebase_storage.Reference ref = firebase_storage.FirebaseStorage.instance
-          .ref()
-          .child('profile_pictures/$fileName');
+      firebase_storage.Reference ref = firebase_storage.FirebaseStorage.instance.ref().child('profile_pictures/$fileName');
 
       firebase_storage.UploadTask uploadTask = ref.putFile(imageFile);
 
@@ -266,6 +269,92 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     } catch (e) {
       print('Error uploading profile picture: $e');
       throw e; // Rethrow the error to be caught by the caller
+    }
+  }
+
+  Future<void> updateProfileImageOnExistingPosts(String oldImageURL, String newImageURL) async {
+    try {
+      // Fetch the document snapshots
+      final snapshot = await FirebaseFirestore.instance.collection('items').where('id', isEqualTo: FirebaseAuth.instance.currentUser!.uid).get();
+
+      // Check if the snapshot has data
+      if (snapshot.docs.isNotEmpty) {
+        // Iterate through the documents
+        for (final doc in snapshot.docs) {
+          // Check if the document contains the "userImage" field
+          if (doc.data().containsKey('userImage')) {
+            // Check if the "userImage" field matches the old profile image URL
+            if (doc['userImage'] == oldImageURL) {
+              // Update the "userImage" field with the new profile image URL
+              await doc.reference.update({'userImage': newImageURL});
+            }
+          }
+        }
+      }
+    } catch (e) {
+      print('Error updating profile image on existing posts: $e');
+      // Handle any errors
+    }
+  }
+
+  void _saveChanges() async {
+    try {
+      String newName = _nameController.text.trim();
+      String oldUserName = FirebaseAuth.instance.currentUser!.displayName ?? '';
+      setState(() {
+        _isUpdating = true;
+      });
+
+      // Update user profile information in Firebase Auth
+      User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        if (_image != null) {
+          // Upload the new profile picture and get the download URL
+          String imageUrl = await uploadProfilePicture(_image!);
+          setState(() {
+            userPhotoUrl = imageUrl;
+          });
+          await currentUser.updatePhotoURL(userPhotoUrl);
+        }
+
+        await currentUser.updateProfile(displayName: newName);
+      }
+
+      // Update user name and image URL in Firestore users collection
+      String uid = currentUser?.uid ?? '';
+      Map<String, dynamic> userData = {
+        'userName': newName,
+      };
+      if (userPhotoUrl.isNotEmpty) {
+        userData['userImage'] = userPhotoUrl; // Use the userPhotoUrl variable
+      }
+      await FirebaseFirestore.instance.collection('users').doc(uid).update(userData);
+
+      // Update user name in Firestore items collection
+      await updateProfileImageOnExistingPosts(oldUserPhotoUrl, userPhotoUrl);
+
+      // Update local state
+      setState(() {
+        // FirebaseAuth.instance.currentUser!.displayName = newName;
+        // Remove this line since we already updated the display name using updateProfile method
+      });
+
+      // Pop the screen
+      Navigator.pop(context);
+    } catch (e) {
+      // Handle any errors
+      print('Error updating profile: $e');
+      // Show a snackbar or alert dialog to notify the user about the error
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to update profile. Please try again later.'),
+        ),
+      );
+    } finally {
+      // Set _isUpdating to false after the update process is complete
+      setState(() {
+        _isUpdating = false;
+      });
     }
   }
 
@@ -325,101 +414,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  void _saveChanges() async {
-    try {
-      String newName = _nameController.text.trim();
-      String oldUserName = adUserName;
-      setState(() {
-        _isUpdating = true;
-      });
-
-      // Update user profile information in Firebase Auth
-      User? currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser != null) {
-        await currentUser.updateDisplayName(newName);
-        if (_image != null) {
-          // Upload the new profile picture and get the download URL
-          String imageUrl = await uploadProfilePicture(_image!);
-          userPhotoUrl = imageUrl;
-          await currentUser.updatePhotoURL(userPhotoUrl);
-        }
-      }
-
-      // Update user name and image URL in Firestore users collection
-      String uid = currentUser?.uid ?? '';
-      Map<String, dynamic> userData = {
-        'userName': newName,
-      };
-      if (userPhotoUrl.isNotEmpty) {
-        userData['userImage'] = userPhotoUrl;
-      }
-      await FirebaseFirestore.instance.collection('users').doc(uid).update(userData);
-
-      // Update user name in Firestore items collection
-      await updateProfileNameOnExistingPost(oldUserName, newName);
-
-      // Update local state
-      setState(() {
-        adUserName = newName;
-      });
-
-      // Pop the screen
-      Navigator.pop(context);
-    } catch (e) {
-      // Handle any errors
-      print('Error updating profile: $e');
-      // Show a snackbar or alert dialog to notify the user about the error
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to update profile. Please try again later.'),
-        ),
-      );
-    } finally {
-      // Set _isUpdating to false after the update process is complete
-      setState(() {
-        _isUpdating = false;
-      });
-    }
-  }
-
-  Future<void> updateProfileNameOnExistingPost(String oldUserName, String newUserName) async {
-    try {
-      // Fetch the document snapshot
-      final snapshot = await FirebaseFirestore.instance
-          .collection('items')
-          .where('id', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
-          .get();
-
-      // Check if the snapshot has data
-      if (snapshot.docs.isNotEmpty) {
-        // Iterate through the documents
-        for (final doc in snapshot.docs) {
-          // Check if the document contains the "userName" field
-          if (doc.data().containsKey('userName')) {
-            // Check if the "userName" field matches the old user name
-            if (doc['userName'] == oldUserName) {
-              // Update the "userName" field with the new user name
-              await doc.reference.update({'userName': newUserName});
-            }
-          }
-
-          // Check if the document contains the "userImage" field
-          if (doc.data().containsKey('userImage')) {
-            // Check if the "userImage" field matches the old user image URL
-            if (doc['userImage'] == oldUserPhotoUrl) {
-              // Update the "userImage" field with the new user image URL
-              await doc.reference.update({'userImage': userPhotoUrl});
-            }
-          }
-        }
-      }
-    } catch (e) {
-      print('Error updating profile: $e');
-      // Handle any errors
-    }
-  }
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -440,9 +434,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 backgroundImage: _image == null ? null : FileImage(_image!),
                 child: _image == null
                     ? const Icon(
-                        Icons.camera_enhance,
-                        color: Colors.black,
-                      )
+                  Icons.camera_enhance,
+                  color: Colors.black,
+                )
                     : null,
               ),
             ),
@@ -456,7 +450,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               child: _isUpdating
                   ? const CircularProgressIndicator() // Show loading indicator if updating
                   : const Text('Save Changes'),
-            ),          ],
+            ),
+          ],
         ),
       ),
     );
