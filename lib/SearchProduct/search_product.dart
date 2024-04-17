@@ -205,14 +205,21 @@ class _SearchProductState extends State<SearchProduct> {
             return itemModel.contains(searchQueryLower);
           }).toList();
 
-          if (docs.isNotEmpty) {
+          // Apply additional filtering based on the address if it's provided
+          final filteredDocs = docs.where((doc) {
+            final address = doc['address'].toString().toLowerCase();
+            final filterAddress = _addressController.text.toLowerCase();
+            return address.contains(filterAddress);
+          }).toList();
+
+          if (filteredDocs.isNotEmpty) {
             return ListView.builder(
-              itemCount: docs.length,
+              itemCount: filteredDocs.length,
               itemBuilder: (BuildContext context, int index) {
-                final item = docs[index].data();
+                final item = filteredDocs[index].data();
                 final itemColor = item['itemColor'];
                 return ListViewWidget(
-                  docId: docs[index].id,
+                  docId: filteredDocs[index].id,
                   itemColor: itemColor is String ? itemColor : '',
                   img1: item['urlImage1'],
                   img2: item['urlImage2'],
@@ -236,7 +243,7 @@ class _SearchProductState extends State<SearchProduct> {
             );
           } else {
             return const Center(
-              child: Text('No items match the search query'),
+              child: Text('No items match the search query and address filter'),
             );
           }
         } else {
