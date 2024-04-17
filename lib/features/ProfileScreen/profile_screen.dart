@@ -107,7 +107,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           actions: [
             IconButton(
-              icon: Icon(Icons.edit),
+              icon: const Icon(Icons.edit),
               onPressed: _editProfile,
             ),
           ],
@@ -184,7 +184,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 class EditProfileScreen extends StatefulWidget {
   final String sellerId;
 
-  const EditProfileScreen({Key? key, required this.sellerId}) : super(key: key);
+  const EditProfileScreen({super.key, required this.sellerId});
 
   @override
   _EditProfileScreenState createState() => _EditProfileScreenState();
@@ -282,7 +282,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 onTap: () {
                   _getFromCamera();
                 },
-                child: Row(
+                child: const Row(
                   children: [
                     Padding(
                       padding: EdgeInsets.all(4.0),
@@ -302,7 +302,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 onTap: () {
                   _getFromGallery();
                 },
-                child: Row(
+                child: const Row(
                   children: [
                     Padding(
                       padding: EdgeInsets.all(4.0),
@@ -370,7 +370,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       print('Error updating profile: $e');
       // Show a snackbar or alert dialog to notify the user about the error
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Failed to update profile. Please try again later.'),
         ),
       );
@@ -424,7 +424,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Edit Profile'),
+        title: const Text('Edit Profile'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -439,23 +439,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 backgroundColor: Colors.white24,
                 backgroundImage: _image == null ? null : FileImage(_image!),
                 child: _image == null
-                    ? Icon(
+                    ? const Icon(
                         Icons.camera_enhance,
                         color: Colors.black,
                       )
                     : null,
               ),
             ),
-            Text('Name'),
+            const Text('Name'),
             TextField(
               controller: _nameController,
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _isUpdating ? null : _saveChanges,
               child: _isUpdating
-                  ? CircularProgressIndicator() // Show loading indicator if updating
-                  : Text('Save Changes'),
+                  ? const CircularProgressIndicator() // Show loading indicator if updating
+                  : const Text('Save Changes'),
             ),          ],
         ),
       ),

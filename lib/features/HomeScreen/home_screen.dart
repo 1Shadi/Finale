@@ -73,7 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const SearchProduct()),
+                  MaterialPageRoute(builder: (context) =>  SearchProduct()),
                 );
               },
               icon: const Padding(

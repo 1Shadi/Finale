@@ -182,11 +182,7 @@ class _SearchProductState extends State<SearchProduct> {
             ),
           ),
         ),
-        body: _isSearching
-            ? _buildFilteredResults()
-            : const Center(
-          child: Text('Press the search button to start searching'),
-        ),
+        body: _buildFilteredResults()
       ),
     );
   }
@@ -197,58 +193,27 @@ class _SearchProductState extends State<SearchProduct> {
           .collection('items')
           .where('status', isEqualTo: 'approved')
           .snapshots(),
-      builder: (context,
-          AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot) {
+      builder: (context, AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
             child: CircularProgressIndicator(),
           );
-        } else if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
-          final filteredDocs = snapshot.data!.docs.where((doc) {
-            final itemPrice = doc['itemPrice'] != null
-                ? double.tryParse(doc['itemPrice'].toString())
-                : null;
-            final address = doc['address'] as String? ?? '';
-            if (itemPrice != null &&
-                _minPriceController.text.isNotEmpty &&
-                _maxPriceController.text.isNotEmpty &&
-                _addressController.text.isNotEmpty) {
-              final minPrice = double.parse(_minPriceController.text);
-              final maxPrice = double.parse(_maxPriceController.text);
-              return itemPrice >= minPrice &&
-                  itemPrice <= maxPrice &&
-                  address.toLowerCase().contains(_addressController.text.toLowerCase());
-            } else if (_minPriceController.text.isNotEmpty &&
-                _maxPriceController.text.isNotEmpty) {
-              final minPrice = double.parse(_minPriceController.text);
-              final maxPrice = double.parse(_maxPriceController.text);
-              return itemPrice != null &&
-                  itemPrice >= minPrice &&
-                  itemPrice <= maxPrice;
-            } else if (_minPriceController.text.isNotEmpty) {
-              final minPrice = double.parse(_minPriceController.text);
-              return itemPrice != null && itemPrice >= minPrice;
-            } else if (_maxPriceController.text.isNotEmpty) {
-              final maxPrice = double.parse(_maxPriceController.text);
-              return itemPrice != null && itemPrice <= maxPrice;
-            } else if (_addressController.text.isNotEmpty) {
-              return address.toLowerCase().contains(_addressController.text.toLowerCase());
-            }
-            return true; // Return true for documents with null or invalid itemPrice
+        } else if (snapshot.hasData) {
+          final docs = snapshot.data!.docs.where((doc) {
+            final itemModel = doc['itemModel'].toString().toLowerCase();
+            final searchQueryLower = searchQuery.toLowerCase();
+            return itemModel.contains(searchQueryLower);
           }).toList();
 
-          if (filteredDocs.isNotEmpty) {
+          if (docs.isNotEmpty) {
             return ListView.builder(
-              itemCount: filteredDocs.length,
+              itemCount: docs.length,
               itemBuilder: (BuildContext context, int index) {
-                final item = filteredDocs[index].data();
-                final itemColor =
-                item['itemColor']; // Get the value of 'itemColor' field
+                final item = docs[index].data();
+                final itemColor = item['itemColor'];
                 return ListViewWidget(
-                  docId: filteredDocs[index].id,
-                  itemColor: itemColor is String
-                      ? itemColor
-                      : '', // Check if 'itemColor' is a string
+                  docId: docs[index].id,
+                  itemColor: itemColor is String ? itemColor : '',
                   img1: item['urlImage1'],
                   img2: item['urlImage2'],
                   img3: item['urlImage3'],
