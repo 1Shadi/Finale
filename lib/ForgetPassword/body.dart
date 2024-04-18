@@ -1,12 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:tabeeby_app/DialogBox/error_dialog.dart';
-import 'package:tabeeby_app/LoginScreen/login_screen.dart';
 
+import '../core/DialogBox/error_dialog.dart';
+import '../features/LoginScreen/login_screen.dart';
 import 'background.dart';
 
 class ForgetBody extends StatefulWidget {
+  const ForgetBody({super.key});
+
 
   @override
   State<ForgetBody> createState() => _ForgetBodyState();
