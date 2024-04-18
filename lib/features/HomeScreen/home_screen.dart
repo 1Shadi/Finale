@@ -18,14 +18,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-
-  @override
-  // void initState() {
-  //   super.initState();
-  //   uid = FirebaseAuth.instance.currentUser!.uid;
-  //   userEmail = FirebaseAuth.instance.currentUser!.email!;
-  //   getMyData();
-  // }
   @override
   void initState() {
     super.initState();
@@ -34,9 +26,6 @@ class _HomeScreenState extends State<HomeScreen> {
       uid = currentUser.uid;
       userEmail = currentUser.email!;
       getMyData();
-    } else {
-      // Handle the case where the user is not authenticated
-      // For example, redirect to the login screen or show an error message
     }
   }
 
@@ -76,7 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 );
-                await getMyData(); // Refresh user data after returning from profile screen
+                await getMyData();
               },
               icon: const Padding(
                 padding: EdgeInsets.all(10.0),
@@ -132,7 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         body: StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance.collection('items').snapshots(),
+          stream: FirebaseFirestore.instance.collection('items').orderBy('time', descending: true).snapshots(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -215,7 +204,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({Key? key}) : super(key: key);
+  const ChatScreen({super.key});
 
   @override
   _ChatScreenState createState() => _ChatScreenState();
@@ -223,8 +212,8 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
-  late String currentUser; // Store the current user's ID
-  late String currentUserName; // Store the current user's name
+  late String currentUser;
+  late String currentUserName;
 
   @override
   void initState() {
@@ -234,7 +223,6 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> getCurrentUserName() async {
-    // Retrieve the current user's name from Firestore
     final userData = await FirebaseFirestore.instance.collection('users').doc(currentUser).get();
     setState(() {
       currentUserName = userData['userName'];
@@ -280,7 +268,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         }
 
                         if (!userSnapshot.hasData || userSnapshot.data == null) {
-                          return const SizedBox(); // Return an empty widget if data is null
+                          return const SizedBox();
                         }
 
                         final senderData = userSnapshot.data!.data() as Map<String, dynamic>;
@@ -357,8 +345,6 @@ class _ChatScreenState extends State<ChatScreen> {
         'sender': currentUser,
         'timestamp': Timestamp.now(),
       });
-
-      // Clear the message input field after sending
       _messageController.clear();
     }
   }

@@ -130,6 +130,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           stream: FirebaseFirestore.instance
               .collection('items')
               .where('id', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
+              .orderBy('time', descending: true)
               .snapshots(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
