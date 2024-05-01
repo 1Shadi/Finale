@@ -5,17 +5,13 @@ import 'package:url_launcher/url_launcher.dart';
 import '../HomeScreen/home_screen.dart';
 
 class ImageSliderScreen extends StatefulWidget {
-  final String title, urlImage1, urlImage2, urlImage3, urlImage4, urlImage5;
+  final String title;
   final String itemColor, userNumber, description, address, itemPrice;
   final double lat, lng;
-
+  final List<String> urlslist;
   const ImageSliderScreen({super.key,
     required this.title,
-    required this.urlImage1,
-    required this.urlImage2,
-    required this.urlImage3,
-    required this.urlImage4,
-    required this.urlImage5,
+    required this.urlslist,
     required this.itemColor,
     required this.userNumber,
     required this.description,
@@ -36,13 +32,6 @@ class _ImageSliderScreenState extends State<ImageSliderScreen> with SingleTicker
   @override
   void initState() {
     super.initState();
-    links = [
-      widget.urlImage1,
-      widget.urlImage2,
-      widget.urlImage3,
-      widget.urlImage4,
-      widget.urlImage5,
-    ];
     tabController = TabController(length: 5, vsync: this);
   }
 
@@ -118,18 +107,23 @@ class _ImageSliderScreenState extends State<ImageSliderScreen> with SingleTicker
                 width: size.width,
                 child: Padding(
                   padding: const EdgeInsets.all(2),
-                  child: CarouselSlider(
-                    items: links.map((link) => Image.network(link)).toList(),
-                    options: CarouselOptions(
-                      autoPlay: true,
-                      autoPlayInterval: const Duration(seconds: 2),
-                      autoPlayAnimationDuration: const Duration(milliseconds: 500),
-                      autoPlayCurve: Curves.easeIn,
-                      pauseAutoPlayOnTouch: true,
-                      viewportFraction: 1,
-                      aspectRatio: 1,
-                    ),
-                  ),
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: widget.urlslist.length,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 18.0),
+                        child: Container(
+                          margin: const EdgeInsets.all(8),
+                          child: Image.network(
+                            widget.urlslist[index],
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      );
+                    },
+                  )
+
                 ),
               ),
               Padding(
@@ -185,14 +179,12 @@ class _ImageSliderScreenState extends State<ImageSliderScreen> with SingleTicker
                         if (await canLaunch(url)) {
                           await launch(url);
                         } else {
-                          // Show snackbar or dialog indicating the issue with launching the URL
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                             content: Text("Could not open map. Please check your settings."),
                           ));
                         }
                       } catch (e) {
                         print("Error launching URL: $e");
-                        // Show snackbar or dialog indicating the error
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                           content: Text("An error occurred while opening the map."),
                         ));

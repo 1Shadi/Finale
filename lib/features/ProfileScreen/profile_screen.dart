@@ -145,11 +145,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     return ListViewWidget(
                       docId: items[index].id,
                       itemColor: item['itemColor'] ?? '',
-                      img1: item['urlImage1'] ?? '',
-                      img2: item['urlImage2'] ?? '',
-                      img3: item['urlImage3'] ?? '',
-                      img4: item['urlImage4'] ?? '',
-                      img5: item['urlImage5'] ?? '',
                       userImg: item['imgPro'] ?? '',
                       name: item['userName'] ?? '',
                       date: item['time']?.toDate() ?? DateTime.now(),
@@ -162,6 +157,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       lng: item['lng'] ?? 0.0,
                       address: item['address'] ?? '',
                       userNumber: item['userNumber'] ?? '',
+                      urlslist:
+                          (item['urlImage'] as List<dynamic>).cast<String>(),
                     );
                   },
                 );
@@ -191,8 +188,6 @@ class EditProfileScreen extends StatefulWidget {
   _EditProfileScreenState createState() => _EditProfileScreenState();
 }
 
-
-
 class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _nameController;
   File? _image;
@@ -216,6 +211,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       });
     });
   }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -223,7 +219,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   void _getFromCamera() async {
-    XFile? pickedFile = await ImagePicker().pickImage(source: ImageSource.camera);
+    XFile? pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.camera);
     if (pickedFile != null) {
       _cropImage(pickedFile.path);
     }
@@ -231,7 +228,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   void _getFromGallery() async {
-    XFile? pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    XFile? pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       _cropImage(pickedFile.path);
     }
@@ -256,7 +254,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       String uid = FirebaseAuth.instance.currentUser!.uid;
       String fileName = 'profile_picture_$uid.jpg';
 
-      firebase_storage.Reference ref = firebase_storage.FirebaseStorage.instance.ref().child('profile_pictures/$fileName');
+      firebase_storage.Reference ref = firebase_storage.FirebaseStorage.instance
+          .ref()
+          .child('profile_pictures/$fileName');
 
       firebase_storage.UploadTask uploadTask = ref.putFile(imageFile);
 
@@ -273,10 +273,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  Future<void> updateProfileImageOnExistingPosts(String oldImageURL, String newImageURL) async {
+  Future<void> updateProfileImageOnExistingPosts(
+      String oldImageURL, String newImageURL) async {
     try {
       // Fetch the document snapshots
-      final snapshot = await FirebaseFirestore.instance.collection('items').where('id', isEqualTo: FirebaseAuth.instance.currentUser!.uid).get();
+      final snapshot = await FirebaseFirestore.instance
+          .collection('items')
+          .where('id', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
+          .get();
 
       // Check if the snapshot has data
       if (snapshot.docs.isNotEmpty) {
@@ -329,7 +333,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (userPhotoUrl.isNotEmpty) {
         userData['userImage'] = userPhotoUrl; // Use the userPhotoUrl variable
       }
-      await FirebaseFirestore.instance.collection('users').doc(uid).update(userData);
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .update(userData);
 
       // Update user name in Firestore items collection
       await updateProfileImageOnExistingPosts(oldUserPhotoUrl, userPhotoUrl);
@@ -435,9 +442,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 backgroundImage: _image == null ? null : FileImage(_image!),
                 child: _image == null
                     ? const Icon(
-                  Icons.camera_enhance,
-                  color: Colors.black,
-                )
+                        Icons.camera_enhance,
+                        color: Colors.black,
+                      )
                     : null,
               ),
             ),

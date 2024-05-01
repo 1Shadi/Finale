@@ -46,24 +46,103 @@ class _UploadAdScreenState extends State<UploadAdScreen> {
     }
   }
 
-  Future<void> uploadFile() async {
-    int i = 1;
-    for (var img in _image) {
-      setState(() {
-        val = i / _image.length;
-      });
-      var ref = FirebaseStorage.instance
-          .ref()
-          .child('image/${Path.basename(img.path)}');
+  // Future<void> uploadFile() async {
+  //   int i = 1;
+  //   for (var img in _image) {
+  //     setState(() {
+  //       val = i / _image.length;
+  //     });
+  //     var ref = FirebaseStorage.instance
+  //         .ref()
+  //         .child('image/${Path.basename(img.path)}');
+  //
+  //     await ref.putFile(img).whenComplete(() async {
+  //       await ref.getDownloadURL().then((value) {
+  //         urlslist.add(value);
+  //         i++;
+  //       });
+  //     });
+  //   }
+  // }
 
-      await ref.putFile(img).whenComplete(() async {
-        await ref.getDownloadURL().then((value) {
-          urlslist.add(value);
-          i++;
+  Future<void> uploadFile() async {
+    List<String> downloadUrls = [];
+    int i = 1;
+    try {
+      for (var img in _image) {
+        setState(() {
+          val = i / _image.length;
         });
+        var ref = FirebaseStorage.instance
+            .ref()
+            .child('image/${Path.basename(img.path)}');
+
+        await ref.putFile(img);
+
+        var downloadUrl = await ref.getDownloadURL();
+        downloadUrls.add(downloadUrl);
+        i++;
+      }
+
+      // After all images are uploaded, set the urlslist and proceed to upload data
+      setState(() {
+        urlslist = downloadUrls;
       });
+
+      // Empty the _image list to free up memory
+      _image.clear();
+    } catch (error) {
+      print('Error uploading file: $error');
+      Fluttertoast.showToast(
+        msg: 'An error occurred while uploading file',
+      );
     }
   }
+
+  Future<void> uploadData() async {
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser != null) {
+        await FirebaseFirestore.instance
+            .collection('items')
+            .doc(postId)
+            .set({
+          'userName': name,
+          'id': currentUser.uid,
+          'postId': postId,
+          'userNumber': phoneNo,
+          'itemPrice': itemPrice,
+          'itemModel': itemModel,
+          'itemWeight': itemWeight,
+          'description': description,
+          'urlslist': urlslist,
+          'imgPro': userImageUrl,
+          'lst': latitude,
+          'lng': longitude,
+          'address': address,
+          'time': DateTime.now(),
+          'status': 'approved',
+        });
+
+        Fluttertoast.showToast(
+          msg: 'Data added successfully....',
+        );
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const HomeScreen(),
+          ),
+        );
+      }
+    } catch (error) {
+      print('Error uploading data: $error');
+      Fluttertoast.showToast(
+        msg: 'An error occurred while uploading data',
+      );
+    }
+  }
+
 
   getNameOfUser() {
     final currentUser = _auth.currentUser;
@@ -91,8 +170,6 @@ class _UploadAdScreenState extends State<UploadAdScreen> {
   }
 
   void getLocation() {
-    // Implement the logic to retrieve user's location coordinates
-    // Set the latitude and longitude variables accordingly
   }
 
   @override
@@ -224,6 +301,7 @@ class _UploadAdScreenState extends State<UploadAdScreen> {
                   width: MediaQuery.of(context).size.width * 0.5,
                   child: ElevatedButton(
                     onPressed: () {
+
                       showDialog(
                         context: context,
                         builder: (context) {
@@ -245,21 +323,7 @@ class _UploadAdScreenState extends State<UploadAdScreen> {
                           'itemModel': itemModel,
                           'itemWeight': itemWeight,
                           'description': description,
-                          'urlImage1': urlslist.isNotEmpty
-                              ? urlslist[0].toString()
-                              : '',
-                          'urlImage2': urlslist.length >= 2
-                              ? urlslist[1].toString()
-                              : '',
-                          'urlImage3': urlslist.length >= 3
-                              ? urlslist[2].toString()
-                              : '',
-                          'urlImage4': urlslist.length >= 4
-                              ? urlslist[3].toString()
-                              : '',
-                          'urlImage5': urlslist.length >= 5
-                              ? urlslist[4].toString()
-                              : '',
+                          'urlImage': urlslist,
                           'imgPro': userImageUrl,
                           'lst': latitude,
                           'lng': longitude,
@@ -279,7 +343,9 @@ class _UploadAdScreenState extends State<UploadAdScreen> {
                       }).catchError((onError) {
                         print(onError);
                       });
-                    },
+
+
+                      },
                     child: const Text(
                       'Upload',
                       style: TextStyle(

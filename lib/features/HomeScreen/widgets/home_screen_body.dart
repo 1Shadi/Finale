@@ -133,11 +133,7 @@ class _HomeScreenBodyState extends State<HomeScreenBody> {
                     return ListViewWidget(
                       docId: snapshot.data!.docs[index].id,
                       itemColor: snapshot.data!.docs[index]['itemColor'],
-                      img1: snapshot.data!.docs[index]['urlImage1'],
-                      img2: snapshot.data!.docs[index]['urlImage2'],
-                      img3: snapshot.data!.docs[index]['urlImage3'],
-                      img4: snapshot.data!.docs[index]['urlImage4'],
-                      img5: snapshot.data!.docs[index]['urlImage5'],
+                      urlslist: snapshot.data!.docs[index]['urlslist'],
                       userImg: snapshot.data!.docs[index]['imgPro'],
                       name: snapshot.data!.docs[index]['userName'],
                       date: snapshot.data!.docs[index]['time'].toDate(),

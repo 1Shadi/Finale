@@ -221,11 +221,7 @@ class _SearchProductState extends State<SearchProduct> {
                 return ListViewWidget(
                   docId: filteredDocs[index].id,
                   itemColor: itemColor is String ? itemColor : '',
-                  img1: item['urlImage1'],
-                  img2: item['urlImage2'],
-                  img3: item['urlImage3'],
-                  img4: item['urlImage4'],
-                  img5: item['urlImage5'],
+                  urlslist: (item['urlImage'] as List<dynamic>).cast<String>(),
                   userImg: item['imgPro'],
                   name: item['userName'],
                   date: item['time'].toDate(),

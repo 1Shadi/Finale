@@ -8,6 +8,7 @@ import '../../core/Widgets/listview.dart';
 import '../ProfileScreen/profile_screen.dart';
 import '../UploadAdScreen/upload_ad_screen.dart';
 import '../WelcomeScreen/welcome_screen.dart';
+import '../chats/chat_contact.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key});
@@ -55,6 +56,15 @@ class _HomeScreenState extends State<HomeScreen> {
         appBar: AppBar(
           automaticallyImplyLeading: false,
           actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => MessageSenderScreen(currentUserId: uid,)),
+                );
+              },
+              child: const Text('Your Chats'),
+            ),
             IconButton(
               onPressed: () async {
                 await Navigator.push(
@@ -76,7 +86,8 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const SearchProduct()),
+                  MaterialPageRoute(
+                      builder: (context) => const SearchProduct()),
                 );
               },
               icon: const Padding(
@@ -121,7 +132,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         body: StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance.collection('items').orderBy('time', descending: true).snapshots(),
+          stream: FirebaseFirestore.instance
+              .collection('items')
+              .orderBy('time', descending: true)
+              .snapshots(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -134,11 +148,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   return ListViewWidget(
                     docId: items[index].id,
                     itemColor: item['itemColor'] ?? '',
-                    img1: item['urlImage1'] ?? '',
-                    img2: item['urlImage2'] ?? '',
-                    img3: item['urlImage3'] ?? '',
-                    img4: item['urlImage4'] ?? '',
-                    img5: item['urlImage5'] ?? '',
+                    urlslist:
+                        (item['urlImage'] as List<dynamic>).cast<String>(),
                     userImg: item['imgPro'] ?? '',
                     name: item['userName'] ?? '',
                     date: item['time']?.toDate() ?? DateTime.now(),
@@ -161,191 +172,259 @@ class _HomeScreenState extends State<HomeScreen> {
             }
           },
         ),
-        floatingActionButton: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: FloatingActionButton(
-                tooltip: 'Add Post',
-                backgroundColor: Colors.black54,
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const UploadAdScreen(),
-                    ),
-                  );
-                },
-                child: const Icon(Icons.cloud_upload, color: Colors.white),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: FloatingActionButton(
-                tooltip: 'Add Post',
-                backgroundColor: Colors.black54,
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ChatScreen(),
-                    ),
-                  );
-                },
-                child: const Icon(Icons.chat, color: Colors.white),
-              ),
-            ),
-          ],
+        floatingActionButton: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: FloatingActionButton(
+            tooltip: 'Add Post',
+            backgroundColor: Colors.black54,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const UploadAdScreen(),
+                ),
+              );
+            },
+            child: const Icon(Icons.cloud_upload, color: Colors.white),
+          ),
         ),
       ),
     );
   }
 }
 
-class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
 
-  @override
-  _ChatScreenState createState() => _ChatScreenState();
-}
 
-class _ChatScreenState extends State<ChatScreen> {
-  final TextEditingController _messageController = TextEditingController();
-  late String currentUser;
-  late String currentUserName;
 
-  @override
-  void initState() {
-    super.initState();
-    currentUser = FirebaseAuth.instance.currentUser!.uid;
-    getCurrentUserName();
-  }
-
-  Future<void> getCurrentUserName() async {
-    final userData = await FirebaseFirestore.instance.collection('users').doc(currentUser).get();
-    setState(() {
-      currentUserName = userData['userName'];
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Chat Screen'),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: StreamBuilder(
-              stream: FirebaseFirestore.instance
-                  .collection('messages')
-                  .orderBy('timestamp', descending: true)
-                  .snapshots(),
-              builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                }
-
-                final messages = snapshot.data!.docs;
-                return ListView.builder(
-                  reverse: true,
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final message = messages[index].data() as Map<String, dynamic>;
-                    final sender = message['sender'];
-                    final text = message['text'];
-                    final isCurrentUser = sender == currentUser;
-
-                    return FutureBuilder<DocumentSnapshot>(
-                      future: FirebaseFirestore.instance.collection('users').doc(sender).get(),
-                      builder: (context, AsyncSnapshot<DocumentSnapshot> userSnapshot) {
-                        if (userSnapshot.connectionState == ConnectionState.waiting) {
-                          return const CircularProgressIndicator();
-                        }
-
-                        if (!userSnapshot.hasData || userSnapshot.data == null) {
-                          return const SizedBox();
-                        }
-
-                        final senderData = userSnapshot.data!.data() as Map<String, dynamic>;
-                        final senderName = senderData['userName'];
-
-                        return Align(
-                          alignment: isCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
-                          child: Column(
-                            crossAxisAlignment: isCurrentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 8.0),
-                                padding: const EdgeInsets.all(8.0),
-                                decoration: BoxDecoration(
-                                  color: isCurrentUser ? Colors.blue : Colors.black54,
-                                  borderRadius: BorderRadius.circular(12.0),
-                                ),
-                                child: Text(
-                                  text,
-                                  style: const TextStyle(color: Colors.white),
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                                child: Text(
-                                  isCurrentUser ? 'You' : senderName,
-                                  style: TextStyle(
-                                    color: isCurrentUser ? Colors.blue : Colors.black54,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: const InputDecoration(
-                      hintText: 'Enter your message...',
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: () {
-                    _sendMessage();
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _sendMessage() {
-    String messageText = _messageController.text.trim();
-
-    if (messageText.isNotEmpty) {
-      FirebaseFirestore.instance.collection('messages').add({
-        'text': messageText,
-        'sender': currentUser,
-        'timestamp': Timestamp.now(),
-      });
-      _messageController.clear();
-    }
-  }
-}
+//
+// class ChatScreen extends StatefulWidget {
+//   const ChatScreen({super.key, required this.currentUserId, required this.sellerId});
+//
+//   final String currentUserId;
+//   final String sellerId;
+//
+//   @override
+//   _ChatScreenState createState() => _ChatScreenState();
+// }
+//
+// class _ChatScreenState extends State<ChatScreen> {
+//   final TextEditingController _messageController = TextEditingController();
+//   final ScrollController _scrollController = ScrollController();
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: Text('Chat with Seller'),
+//       ),
+//       body: Column(
+//         children: [
+//           Expanded(
+//               child: StreamBuilder<QuerySnapshot>(
+//                 stream: FirebaseFirestore.instance
+//                     .collection('chats')
+//                     .doc(widget.currentUserId)
+//                     .collection(widget.sellerId)
+//                     .orderBy('timestamp', descending: true)
+//                     .snapshots(),
+//                 builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+//                   if (snapshot.connectionState == ConnectionState.waiting) {
+//                     return Center(
+//                       child: CircularProgressIndicator(),
+//                     );
+//                   }
+//
+//                   final messages = snapshot.data!.docs;
+//                   return ListView.builder(
+//                     controller: _scrollController,
+//                     reverse: true,
+//                     itemCount: messages.length,
+//                     itemBuilder: (context, index) {
+//                       final message = messages[index].data() as Map<String, dynamic>?;
+//                       if (message == null) {
+//                         return SizedBox();
+//                       }
+//                       final sender = message['sender'];
+//                       final text = message['text'];
+//                       final isCurrentUser = sender == widget.currentUserId;
+//
+//                       return Align(
+//                         alignment: isCurrentUser
+//                             ? Alignment.centerRight
+//                             : Alignment.centerLeft,
+//                         child: Column(
+//                           crossAxisAlignment: isCurrentUser
+//                               ? CrossAxisAlignment.end
+//                               : CrossAxisAlignment.start,
+//                           children: [
+//                             Container(
+//                               margin: const EdgeInsets.symmetric(horizontal: 8.0),
+//                               padding: const EdgeInsets.all(8.0),
+//                               decoration: BoxDecoration(
+//                                 color: isCurrentUser
+//                                     ? Colors.blue
+//                                     : Colors.black54,
+//                                 borderRadius: BorderRadius.circular(12.0),
+//                               ),
+//                               child: Text(
+//                                 text,
+//                                 style: const TextStyle(color: Colors.white),
+//                               ),
+//                             ),
+//                             Padding(
+//                               padding: const EdgeInsets.symmetric(horizontal: 16.0),
+//                               child: Text(
+//                                 isCurrentUser ? 'You' : sender,
+//                                 style: TextStyle(
+//                                   color: isCurrentUser ? Colors.blue : Colors.black54,
+//                                 ),
+//                               ),
+//                             ),
+//                           ],
+//                         ),
+//                       );
+//                     },
+//                   );
+//                 },
+//               )),
+//           Padding(
+//             padding: EdgeInsets.all(8.0),
+//             child: Row(
+//               children: [
+//                 Expanded(
+//                   child: TextField(
+//                     controller: _messageController,
+//                     decoration: InputDecoration(
+//                       hintText: 'Type your message...',
+//                     ),
+//                   ),
+//                 ),
+//                 IconButton(
+//                   icon: Icon(Icons.send),
+//                   onPressed: () {
+//                     _sendMessage();
+//                   },
+//                 ),
+//               ],
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+//
+//   void _sendMessage() {
+//     String messageText = _messageController.text.trim();
+//
+//     if (messageText.isNotEmpty) {
+//       FirebaseFirestore.instance
+//           .collection('chats')
+//           .doc(widget.currentUserId)
+//           .collection(widget.sellerId)
+//           .add({
+//         'text': messageText,
+//         'sender': widget.currentUserId,
+//         'timestamp': Timestamp.now(),
+//       });
+//       _messageController.clear();
+//       _scrollController.animateTo(
+//         0.0,
+//         duration: Duration(milliseconds: 300),
+//         curve: Curves.easeOut,
+//       );
+//     }
+//   }
+// }
+//
+// class YourChatsScreen extends StatefulWidget {
+//   const YourChatsScreen({super.key});
+//
+//   @override
+//   _YourChatsScreenState createState() => _YourChatsScreenState();
+// }
+//
+// class _YourChatsScreenState extends State<YourChatsScreen> {
+//   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: Text('Your Chats'),
+//       ),
+//       body: StreamBuilder<QuerySnapshot>(
+//         stream: _firestore
+//             .collection('chats')
+//             .where('sender', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
+//             .where('recipient', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
+//             .orderBy('timestamp', descending: true)
+//             .snapshots(),
+//         builder: (context, snapshot) {
+//           if (snapshot.connectionState == ConnectionState.waiting) {
+//             return Center(
+//               child: CircularProgressIndicator(),
+//             );
+//           }
+//
+//           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+//             return Center(
+//               child: Text('No chats'),
+//             );
+//           }
+//
+//           final chats = snapshot.data!.docs;
+//           return ListView.builder(
+//             itemCount: chats.length,
+//             itemBuilder: (context, index) {
+//               final chat = chats[index];
+//               final sellerId = chat.id;
+//               final messages = (chat.data() as Map<String, dynamic>? ??
+//                   {})['messages'] as List<dynamic>? ??
+//                   [];
+//               final latestMessage = messages.isNotEmpty ? messages.last : null;
+//               final sender = latestMessage?['sender'];
+//               final text = latestMessage?['text'];
+//               final isCurrentUser =
+//                   sender == FirebaseAuth.instance.currentUser?.uid;
+//
+//               return FutureBuilder<DocumentSnapshot>(
+//                 future: _firestore.collection('users').doc(sender).get(),
+//                 builder:
+//                     (context, AsyncSnapshot<DocumentSnapshot> userSnapshot) {
+//                   if (userSnapshot.connectionState == ConnectionState.waiting) {
+//                     return CircularProgressIndicator();
+//                   }
+//
+//                   if (!userSnapshot.hasData || userSnapshot.data == null) {
+//                     return SizedBox();
+//                   }
+//
+//                   final senderData =
+//                   userSnapshot.data!.data() as Map<String, dynamic>;
+//                   final senderName = senderData['userName'];
+//
+//                   return ListTile(
+//                     title: Text(isCurrentUser ? 'You' : senderName),
+//                     subtitle: Text(text ?? ''),
+//                     onTap: () {
+//                       Navigator.push(
+//                         context,
+//                         MaterialPageRoute(
+//                           builder: (context) => ChatScreen(
+//                             currentUserId:
+//                             FirebaseAuth.instance.currentUser!.uid,
+//                             sellerId: sellerId,
+//                           ),
+//                         ),
+//                       );
+//                     },
+//                   );
+//                 },
+//               );
+//             },
+//           );
+//         },
+//       ),
+//     );
+//   }
+// }
