@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../core/DialogBox/error_dialog.dart';
 import '../../HomeScreen/home_screen.dart';
-
+import '../../navbar/navbar.dart';
 
 class LoginProvider extends ChangeNotifier {
   final TextEditingController emailController = TextEditingController();
@@ -44,22 +44,21 @@ class LoginProvider extends ChangeNotifier {
       User? currentUser = auth.user;
 
       if (currentUser != null) {
-        // ignore: use_build_context_synchronously
+        // Navigate to NavBar and pass the current user ID
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) =>  HomeScreen()),
+          MaterialPageRoute(
+            builder: (context) => NavBar(currentUserId: currentUser.uid),
+          ),
         );
       }
     } catch (error) {
       _isLoading = false;
       notifyListeners();
-      // ignore: use_build_context_synchronously
       showDialog(
         context: context,
-        builder: (context) => ErrorAlertDialog(message: error.toString()), // Display actual error message
+        builder: (context) => ErrorAlertDialog(message: error.toString()),
       );
     }
   }
 }
-
-

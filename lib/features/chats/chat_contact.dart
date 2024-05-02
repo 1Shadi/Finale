@@ -1,6 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'chat.dart';
 
@@ -81,67 +81,111 @@ class _MessageSenderScreenState extends State<MessageSenderScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Chats'),
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.orange, Colors.teal],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          stops: [0.0, 1.0],
+          tileMode: TileMode.clamp,
+        ),
       ),
-      body: FutureBuilder<List<String>>(
-        future: _fetchChatUsersFuture,
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            final chatUsers = snapshot.data!;
-            return StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('users').snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  final users = snapshot.data?.docs ?? [];
-                  if (users.isEmpty) {
-                    return CircularProgressIndicator();
-                  }
-                  final userNames = snapshot.data!.docs;
-                  if (userNames.length < chatUsers.length) {
-                    print('Not enough user data, waiting for more data...');
-                    return CircularProgressIndicator();
-                  }
-                  List<Widget> userListTiles = [];
-                  for (int i = 0; i < chatUsers.length; i++) {
-                    final userName = userNames[i].data() as Map<String, dynamic>;
-                    userListTiles.add(
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ChatScreen(
-                                currentUserId: widget.currentUserId,
-                                chatUserId: chatUsers[i],
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          title: Text('Chats'),
+        ),
+        body: FutureBuilder<List<String>>(
+          future: _fetchChatUsersFuture,
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              final chatUsers = snapshot.data!;
+              return StreamBuilder<QuerySnapshot>(
+                stream:
+                    FirebaseFirestore.instance.collection('users').snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    final users = snapshot.data?.docs ?? [];
+                    if (users.isEmpty) {
+                      return CircularProgressIndicator();
+                    }
+                    final userNames = snapshot.data!.docs;
+                    if (userNames.length < chatUsers.length) {
+                      print('Not enough user data, waiting for more data...');
+                      return CircularProgressIndicator();
+                    }
+                    List<Widget> userListTiles = [];
+                    for (int i = 0; i < chatUsers.length; i++) {
+                      final userName =
+                          userNames[i].data() as Map<String, dynamic>;
+                      userListTiles.add(
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ChatScreen(
+                                  userName: userName['userName']??'',
+                                  currentUserId: widget.currentUserId,
+                                  chatUserId: chatUsers[i],
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                        child: ListTile(
-                          title: Text(userName['userName'] ?? ''),
-                          subtitle: Text(chatUsers[i]),
+                            );
+                          },
+                          child: ListTile(
+                            title: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white24,
+                                  border: Border.all(color: Colors.grey),
+                                  borderRadius: const BorderRadius.all(
+                                    Radius.circular(16),
+                                  ),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 12.0, horizontal: 16),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 50,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          image: DecorationImage(
+                                            image: NetworkImage(userName['userImage'] ),
+                                            fit: BoxFit.fill,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 22,),
+                                      Text(userName['userName'] ?? ''),
+                                    ],
+                                  ),
+                                )),
+                            // subtitle: Text(chatUsers[i]),
+                          ),
                         ),
-                      ),
+                      );
+                    }
+                    return Column(
+                      children: userListTiles,
                     );
+                  } else if (snapshot.hasError) {
+                    return Text('Error: ${snapshot.error}');
+                  } else {
+                    return CircularProgressIndicator();
                   }
-                  return Column(
-                    children: userListTiles,
-                  );
-                } else if (snapshot.hasError) {
-                  return Text('Error: ${snapshot.error}');
-                } else {
-                  return CircularProgressIndicator();
-                }
-              },
-            );
-          } else if (snapshot.hasError) {
-            return Text('Error: ${snapshot.error}');
-          } else {
-            return CircularProgressIndicator();
-          }
-        },
+                },
+              );
+            } else if (snapshot.hasError) {
+              return Text('Error: ${snapshot.error}');
+            } else {
+              return CircularProgressIndicator();
+            }
+          },
+        ),
       ),
     );
   }

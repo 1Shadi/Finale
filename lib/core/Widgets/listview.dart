@@ -1,10 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 
-import '../../features/HomeScreen/home_screen.dart';
 import '../../features/ImageSliderScreen/image_slider_screen.dart';
 import '../../features/chats/chat.dart';
 
@@ -307,79 +306,33 @@ class _ListViewWidgetState extends State<ListViewWidget> {
                   right: 8.0,
                   bottom: 8.0,
                 ),
-                child: Row(
+                child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    CircleAvatar(
-                      radius: 30,
-                      backgroundImage: NetworkImage(
-                        widget.userImg,
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.name,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 5.0,
-                        ),
-                        Text(
-                          widget.itemModel,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.white60,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 8.0,
-                        ),
-                        Text(
-                          DateFormat('dd MMM, yyyy - hh:mm a')
-                              .format(widget.date)
-                              .toString(),
-                          style: const TextStyle(
-                            color: Colors.white60,
-                          ),
-                        ),
-                      ],
-                    ),
                     widget.userId != uid
-                        ? GestureDetector(
-                            onTap: () {
-                              // Navigator.push(
-                              //   context,
-                              //   MaterialPageRoute(
-                              //     builder: (context) => ChatScreen(
-                              //       currentUserId: uid,
-                              //       sellerId: widget.userId,
-                              //     ),
-                              //   ),
-                              // );
-
-
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ChatScreen(
-                                      currentUserId: FirebaseAuth.instance.currentUser!.uid,
-                                      chatUserId: widget.userId,
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ChatScreen(
+                                        currentUserId: FirebaseAuth
+                                            .instance.currentUser!.uid,
+                                        chatUserId: widget.userId,
+                                      ),
                                     ),
-                                  ),
-                                );
-
-                            },
-                            child: const Icon(Icons.chat, color: Colors.white),
+                                  );
+                                },
+                                child:
+                                    const Icon(Icons.chat, color: Colors.white),
+                              ),
+                            ],
                           )
-                        : Column(
-                            mainAxisSize: MainAxisSize.min,
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               GestureDetector(
                                 onTap: () {
@@ -442,6 +395,52 @@ class _ListViewWidgetState extends State<ListViewWidget> {
                               ),
                             ],
                           ),
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 30,
+                          backgroundImage: NetworkImage(
+                            widget.userImg,
+                          ),
+                        ),
+                        const SizedBox(width: 16,),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.name,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(
+                              height: 5.0,
+                            ),
+                            Text(
+                              widget.itemModel,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Colors.white60,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(
+                              height: 8.0,
+                            ),
+                            Text(
+                              DateFormat('dd MMM, yyyy - hh:mm a')
+                                  .format(widget.date)
+                                  .toString(),
+                              style: const TextStyle(
+                                color: Colors.white60,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
