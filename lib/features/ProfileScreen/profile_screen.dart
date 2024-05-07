@@ -26,6 +26,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.initState();
     getUserInfo();
   }
+  Future<String?> _editUserNameDialog(BuildContext context) async {
+    TextEditingController _nameController = TextEditingController();
+    File? _selectedImage;
+    String? newName;
+
+    return showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Edit Profile'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _nameController,
+                decoration: InputDecoration(hintText: 'Enter new username'),
+              ),
+              SizedBox(height: 20),
+              TextButton(
+                onPressed: () async {
+                  File? newImage = await _getImageFromGallery();
+                  setState(() {
+                    _selectedImage = newImage;
+                  });
+                },
+                child: Text('Select Image'),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () async {
+                  newName = _nameController.text.trim();
+                  if (_selectedImage != null) {
+                    String imageUrl = await uploadProfilePicture(_selectedImage!);
+                    await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(widget.userId)
+                        .update({'userImage': imageUrl});
+                    setState(() {
+                      adUserImageUrl = imageUrl;
+                    });
+                  }
+                  Navigator.pop(context, newName);
+                },
+                child: Text('Save'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
 
   Future<void> getUserInfo() async {
     try {
@@ -67,52 +119,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() {
           adUserName = newName;
         });
+        await updateUserInfoInItems(newName, adUserName, adUserImageUrl);
+        // Update the user information in the app bar
+        adUserImageUrl = await _getUserImageUrl(widget.userId);
+        Navigator.pop(context, {'userName': adUserName, 'userImage': adUserImageUrl});
       }
     } catch (e) {
       print('Error editing profile: $e');
     }
   }
 
-  Future<String?> _editUserNameDialog(BuildContext context) async {
-    TextEditingController _nameController = TextEditingController();
-    String? newName;
+  Future<String> _getUserImageUrl(String userId) async {
+    try {
+      DocumentSnapshot snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
 
-    return showDialog<String>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Edit Profile'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _nameController,
-                decoration: InputDecoration(hintText: 'Enter new user name'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  newName = _nameController.text.trim();
-                  File? newImage = await _getImageFromGallery();
-                  if (newImage != null) {
-                    String imageUrl = await uploadProfilePicture(newImage);
-                    await FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(widget.userId)
-                        .update({'userImage': imageUrl});
-                    setState(() {
-                      adUserImageUrl = imageUrl;
-                    });
-                  }
-                  Navigator.pop(context, newName);
-                },
-                child: Text('Save'),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+      if (snapshot.exists) {
+        return snapshot.get('userImage');
+      } else {
+        return ''; // Return empty string if user document doesn't exist
+      }
+    } catch (e) {
+      print('Error getting user image URL: $e');
+      return ''; // Return empty string in case of error
+    }
   }
+
+
 
 
   Future<File?> _getImageFromGallery() async {
