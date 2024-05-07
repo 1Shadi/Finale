@@ -279,7 +279,7 @@ class _SignupBodyState extends State<SignupBody> {
               height: screenHeight * 0.03,
             ),
             AlreadyHaveAnAccountCheck(
-              login: false,
+              login: true,
               press: () {
                 Navigator.push(context,
                     MaterialPageRoute(builder: (context) => LoginScreen()));

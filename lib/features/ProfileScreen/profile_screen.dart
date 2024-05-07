@@ -246,13 +246,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onPressed: _editProfile,
               icon: Icon(Icons.edit),
             ),
-            IconButton(
-              onPressed: () {
-                // Add code to indicate image selection
-                // You can show a dialog or navigate to another screen for image selection
-              },
-              icon: Icon(Icons.image),
-            ),
+
           ],
         ),
         body: Padding(

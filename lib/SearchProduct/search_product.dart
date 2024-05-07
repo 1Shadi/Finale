@@ -6,6 +6,7 @@ import '../core/Widgets/global_var.dart';
 import '../core/Widgets/listview.dart';
 import '../features/HomeScreen/home_screen.dart';
 import '../features/ProfileScreen/profile_screen.dart';
+import '../features/navbar/navbar.dart';
 
 class SearchProduct extends StatefulWidget {
   const SearchProduct({Key? key}) : super(key: key);
@@ -42,6 +43,7 @@ class _SearchProductState extends State<SearchProduct> {
       getUserName = userData['userName'];
     });
   }
+
   Widget _buildSearchField() {
     return TextField(
       controller: _searchQueryController,
@@ -151,7 +153,7 @@ class _SearchProductState extends State<SearchProduct> {
   }
 
   _buildTitle(BuildContext context) {
-    return  const Text(
+    return const Text(
       'Search Screen',
       style: TextStyle(
         color: Colors.black54,
@@ -180,7 +182,17 @@ class _SearchProductState extends State<SearchProduct> {
       child: Scaffold(
           backgroundColor: Colors.transparent,
           appBar: AppBar(
-            // leading: _isSearching ? const BackButton() : _buildBackButton(),
+            leading: IconButton(onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      NavBar(currentUserId: uid,),
+                ),
+              );
+            }, icon: Icon(Icons.chevron_left),
+            ),
+
             title: _isSearching ? _buildSearchField() : _buildTitle(context),
             flexibleSpace: Container(
               decoration: const BoxDecoration(
@@ -196,6 +208,7 @@ class _SearchProductState extends State<SearchProduct> {
                 ),
               ),
             ),
+
           ),
           body: Column(
             children: [

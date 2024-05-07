@@ -296,6 +296,7 @@ class _ListViewWidgetState extends State<ListViewWidget> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => ImageSliderScreen(
+                          userId: widget.userId,
                           title: widget.itemModel,
                           itemColor: widget.itemColor,
                           userNumber: widget.userNumber,
