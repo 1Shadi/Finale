@@ -65,7 +65,7 @@ class _HomeScreenBodyState extends State<HomeScreenBody> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ProfileScreen(sellerId: widget.user.uid),
+                    builder: (context) => ProfileScreen(userId: widget.user.uid,status:'sometinh' ,),
                   ),
                 );
               },

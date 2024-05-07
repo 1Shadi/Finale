@@ -136,6 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         final item =
                             items[index].data() as Map<String, dynamic>;
                         return ListViewWidget(
+                          currentUser:uid,
                           docId: items[index].id,
                           itemColor: item['itemColor'] ?? '',
                           urlslist: (item['urlImage'] as List<dynamic>)

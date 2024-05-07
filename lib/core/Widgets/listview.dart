@@ -13,9 +13,10 @@ class ListViewWidget extends StatefulWidget {
   final DateTime date;
   final double lat, lng;
   final List<String> urlslist;
+  final String currentUser;
 
   const ListViewWidget({
-    Key? key,
+    super.key,
     required this.docId,
     required this.itemColor,
     required this.userImg,
@@ -30,8 +31,8 @@ class ListViewWidget extends StatefulWidget {
     required this.lng,
     required this.address,
     required this.userNumber,
-    required this.urlslist,
-  }) : super(key: key);
+    required this.urlslist, required this.currentUser,
+  });
 
   @override
   State<ListViewWidget> createState() => _ListViewWidgetState();
@@ -297,6 +298,7 @@ class _ListViewWidgetState extends State<ListViewWidget> {
                     MaterialPageRoute(
                       builder: (context) => ImageSliderScreen(
                           userId: widget.userId,
+                          currentUser:widget.currentUser,
                           title: widget.itemModel,
                           itemColor: widget.itemColor,
                           userNumber: widget.userNumber,

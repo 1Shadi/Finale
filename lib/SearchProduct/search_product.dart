@@ -310,7 +310,6 @@ class _SearchProductState extends State<SearchProduct> {
             return itemModel.contains(searchQueryLower);
           }).toList();
 
-          // Apply additional filtering based on the address if it's provided
           final filteredDocs = docs.where((doc) {
             final address = doc['address'].toString().toLowerCase();
             final filterAddress = _addressController.text.toLowerCase();
@@ -338,7 +337,7 @@ class _SearchProductState extends State<SearchProduct> {
                   lat: (item['lat'] as num?)?.toDouble() ?? 0.0,
                   lng: (item['lng'] as num?)?.toDouble() ?? 0.0,
                   address: item['address'],
-                  userNumber: item['userNumber'],
+                  userNumber: item['userNumber'], currentUser: uid,
                 );
               },
             );

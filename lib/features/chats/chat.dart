@@ -1,12 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:tabeeby_app/features/navbar/navbar.dart';
 
 class ChatScreen extends StatefulWidget {
   final String currentUserId;
   final String chatUserId;
   final String? userName;
 
-  const ChatScreen({required this.currentUserId, required this.chatUserId,  this.userName});
+  const ChatScreen(
+      {super.key,
+      required this.currentUserId,
+      required this.chatUserId,
+      this.userName});
 
   @override
   _ChatScreenState createState() => _ChatScreenState();
@@ -15,6 +20,25 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
+  late String recipientUserName = '';
+
+  Future<void> fetchRecipientUserName() async {
+    try {
+      final DocumentSnapshot recipientSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.chatUserId)
+          .get();
+
+      if (recipientSnapshot.exists) {
+        setState(() {
+          recipientUserName = recipientSnapshot['userName'];
+        });
+      }
+    } catch (e) {
+      print('Error fetching recipient user name: $e');
+    }
+  }
+
 
   void _sendReceivedMessage(String messageText) {
     _messageController.text = messageText;
@@ -23,6 +47,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void initState() {
+    print(widget.currentUserId);
+    print(widget.chatUserId);
     super.initState();
     _scrollController.addListener(() {
       if (_scrollController.position.pixels ==
@@ -30,6 +56,8 @@ class _ChatScreenState extends State<ChatScreen> {
         _loadMoreMessages();
       }
     });
+    fetchRecipientUserName();
+
   }
 
   @override
@@ -39,16 +67,14 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
-  Future<void> _loadMoreMessages() async {
-    // Load more messages here
-  }
+  Future<void> _loadMoreMessages() async {}
 
   Future<void> _sendMessage() async {
     final messageText = _messageController.text.trim();
     if (messageText.isNotEmpty) {
       await FirebaseFirestore.instance.collection('messages').add({
         'sender': widget.currentUserId,
-        'recipient': widget.chatUserId, // Set the recipient explicitly
+        'recipient': widget.chatUserId,
         'text': messageText,
         'timestamp': Timestamp.now(),
       });
@@ -81,15 +107,19 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           Container(
             margin: const EdgeInsets.symmetric(vertical: 8.0),
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
             decoration: BoxDecoration(
               color: isMe ? Colors.blueAccent : Colors.grey[200],
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(12.0),
                 topRight: const Radius.circular(12.0),
-                bottomLeft: isMe ? const Radius.circular(0.0) : const Radius.circular(12.0),
-                bottomRight:
-                    isMe ? const Radius.circular(12.0) : const Radius.circular(0.0),
+                bottomLeft: isMe
+                    ? const Radius.circular(0.0)
+                    : const Radius.circular(12.0),
+                bottomRight: isMe
+                    ? const Radius.circular(12.0)
+                    : const Radius.circular(0.0),
               ),
             ),
             child: Text(
@@ -106,7 +136,6 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
     );
   }
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -119,21 +148,23 @@ class _ChatScreenState extends State<ChatScreen> {
           tileMode: TileMode.clamp,
         ),
       ),
-
       child: Scaffold(
         backgroundColor: Colors.transparent,
-
         appBar: AppBar(
           backgroundColor: Colors.transparent,
-
-          title: Text(widget.userName??''),
+          title: Text(widget.userName ?? recipientUserName),
+          leading: IconButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              icon: const Icon(Icons.chevron_left)),
         ),
         body: Padding(
           padding: const EdgeInsets.all(8.0),
           child: Column(
-            children: [
+              children: [
               Expanded(
-                child:StreamBuilder<QuerySnapshot>(
+                child: StreamBuilder<QuerySnapshot>(
                   stream: FirebaseFirestore.instance
                       .collection('messages')
                       .where('sender', isEqualTo: widget.currentUserId)
@@ -153,14 +184,19 @@ class _ChatScreenState extends State<ChatScreen> {
                         builder: (context, snapshot) {
                           if (snapshot.hasData) {
                             final messagesReceived = snapshot.data?.docs ?? [];
-                            final allMessages = [...messagesSent, ...messagesReceived];
-                            allMessages.sort((a, b) => (a['timestamp'] as Timestamp)
-                                .compareTo(b['timestamp'] as Timestamp));
+                            final allMessages = [
+                              ...messagesSent,
+                              ...messagesReceived
+                            ];
+                            allMessages.sort((a, b) =>
+                                (a['timestamp'] as Timestamp)
+                                    .compareTo(b['timestamp'] as Timestamp));
                             return ListView.builder(
                               controller: _scrollController,
                               itemCount: allMessages.length,
                               itemBuilder: (context, index) {
-                                return _buildMessageItem(context, allMessages[index]);
+                                return _buildMessageItem(
+                                    context, allMessages[index]);
                               },
                             );
                           } else if (snapshot.hasError) {
@@ -177,10 +213,6 @@ class _ChatScreenState extends State<ChatScreen> {
                     }
                   },
                 ),
-
-
-
-
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),

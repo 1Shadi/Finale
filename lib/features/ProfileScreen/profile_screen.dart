@@ -1,9 +1,11 @@
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
+import 'package:tabeeby_app/features/LoginScreen/login_screen.dart';
 
 import '../../core/Widgets/listview.dart';
 
@@ -11,7 +13,8 @@ class ProfileScreen extends StatefulWidget {
   final String userId;
   final String status;
 
-  const ProfileScreen({Key? key, required this.userId, required this.status}) : super(key: key);
+
+  const ProfileScreen({super.key, required this.userId, required this.status});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -26,6 +29,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.initState();
     getUserInfo();
   }
+  Future<void> _updateUserName(String newUserName, String newUserNumber) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(FirebaseAuth.instance.currentUser!.uid)
+          .update({
+        'userName': newUserName,
+        'userNumber': newUserNumber,
+      });
+
+      await updateUserInfoInItems(newUserName, adUserName, adUserImageUrl);
+    } catch (e) {
+      print('Error updating user name and number: $e');
+    }
+  }
+
   Future<String?> _editUserNameDialog(BuildContext context) async {
     TextEditingController _nameController = TextEditingController();
     File? _selectedImage;
@@ -35,15 +54,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Edit Profile'),
+          title: const Text('Edit Profile'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: _nameController,
-                decoration: InputDecoration(hintText: 'Enter new username'),
+                decoration: const InputDecoration(hintText: 'Enter new username'),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               TextButton(
                 onPressed: () async {
                   File? newImage = await _getImageFromGallery();
@@ -51,9 +70,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _selectedImage = newImage;
                   });
                 },
-                child: Text('Select Image'),
+                child: const Text('Select Image'),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () async {
                   newName = _nameController.text.trim();
@@ -69,7 +88,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   }
                   Navigator.pop(context, newName);
                 },
-                child: Text('Save'),
+                child: const Text('Save'),
               ),
             ],
           ),
@@ -116,13 +135,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       String? newName = await _editUserNameDialog(context);
       if (newName != null) {
+        await _updateUserName(newName, adUserImageUrl);
         setState(() {
           adUserName = newName;
         });
         await updateUserInfoInItems(newName, adUserName, adUserImageUrl);
-        // Update the user information in the app bar
         adUserImageUrl = await _getUserImageUrl(widget.userId);
-        Navigator.pop(context, {'userName': adUserName, 'userImage': adUserImageUrl});
+        // Navigator.pop(context, {'userName': adUserName, 'userImage': adUserImageUrl});
       }
     } catch (e) {
       print('Error editing profile: $e');
@@ -139,11 +158,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (snapshot.exists) {
         return snapshot.get('userImage');
       } else {
-        return ''; // Return empty string if user document doesn't exist
+        return '';
       }
     } catch (e) {
       print('Error getting user image URL: $e');
-      return ''; // Return empty string in case of error
+      return '';
     }
   }
 
@@ -188,7 +207,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> updateUserInfoInItems(
       String? newName, String oldName, String oldImageUrl) async {
     try {
-      // Update user information in all items posted by the user
       final snapshot = await FirebaseFirestore.instance
           .collection('items')
           .where('id', isEqualTo: widget.userId)
@@ -206,6 +224,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       print('Error updating user info in items: $e');
     }
+  }
+  void _logoutUser() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Logout Confirmation'),
+          content: const Text('Are you sure you want to log out?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+                Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
+              },
+              child: const Text('Logout'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -244,8 +288,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           actions: [
             IconButton(
               onPressed: _editProfile,
-              icon: Icon(Icons.edit),
+              icon: const Icon(Icons.edit),
+            ), IconButton(
+              onPressed:_logoutUser,
+              icon: const Icon(Icons.logout),
             ),
+
 
           ],
         ),
@@ -265,7 +313,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: StreamBuilder<QuerySnapshot>(
                   stream: FirebaseFirestore.instance
                       .collection('items')
-                      .where('id', isEqualTo: widget.userId) // Filter by user ID
+                      .where('id', isEqualTo: widget.userId)
                       .snapshots(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
@@ -294,7 +342,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             lat: item['lat'] ?? 0.0,
                             lng: item['lng'] ?? 0.0,
                             address: item['address'] ?? '',
-                            userNumber: item['userNumber'] ?? '',
+                            userNumber: item['userNumber'] ?? '', currentUser: widget.userId,
                           );
                         },
                       );

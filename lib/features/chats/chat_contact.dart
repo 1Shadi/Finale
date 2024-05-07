@@ -1,13 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:tabeeby_app/features/navbar/navbar.dart';
 
 import 'chat.dart';
 
 class MessageSenderScreen extends StatefulWidget {
   final String currentUserId;
 
-  const MessageSenderScreen({required this.currentUserId});
+  const MessageSenderScreen({super.key, required this.currentUserId});
 
   @override
   _MessageSenderScreenState createState() => _MessageSenderScreenState();
@@ -32,7 +33,6 @@ class _MessageSenderScreenState extends State<MessageSenderScreen> {
         return [];
       }
 
-      // Query messages where the current user is the sender or recipient
       final QuerySnapshot senderMessages = await FirebaseFirestore.instance
           .collection('messages')
           .where('sender', isEqualTo: currentUser)
@@ -45,10 +45,8 @@ class _MessageSenderScreenState extends State<MessageSenderScreen> {
           .get();
       print('Recipient messages: ${recipientMessages.docs}');
 
-      // Extract unique users from sender and recipient messages
       final Set<String> chatUsers = {};
 
-      // Add recipients from sender messages
       senderMessages.docs.forEach((doc) {
         final Map<String, dynamic>? data = doc.data() as Map<String, dynamic>?;
         if (data != null && data.containsKey('recipient')) {
@@ -59,7 +57,6 @@ class _MessageSenderScreenState extends State<MessageSenderScreen> {
         }
       });
 
-      // Add senders from recipient messages
       recipientMessages.docs.forEach((doc) {
         final Map<String, dynamic>? data = doc.data() as Map<String, dynamic>?;
         if (data != null && data.containsKey('sender')) {
@@ -71,10 +68,10 @@ class _MessageSenderScreenState extends State<MessageSenderScreen> {
       });
 
       print('Fetched chat users: $chatUsers');
-      return chatUsers.toList(); // Convert Set to List
+      return chatUsers.toList();
     } catch (error) {
       print('Error fetching chat users: $error');
-      return []; // Return an empty list in case of an error
+      return [];
     }
   }
 
@@ -95,6 +92,16 @@ class _MessageSenderScreenState extends State<MessageSenderScreen> {
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           title: const Text('Chats'),
+          leading: IconButton(
+              onPressed: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          NavBar(currentUserId: widget.currentUserId),
+                    ));
+              },
+              icon: Icon(Icons.chevron_left)),
         ),
         body: FutureBuilder<List<String>>(
           future: _fetchChatUsersFuture,
@@ -106,10 +113,15 @@ class _MessageSenderScreenState extends State<MessageSenderScreen> {
             } else if (snapshot.hasData) {
               final chatUsers = snapshot.data!;
               if (chatUsers.isEmpty) {
-                return const Center(child: Text('There are no chats yet',style: TextStyle(fontSize: 24),));
+                return const Center(
+                    child: Text(
+                  'There are no chats yet',
+                  style: TextStyle(fontSize: 24),
+                ));
               }
               return StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance.collection('users').snapshots(),
+                stream:
+                    FirebaseFirestore.instance.collection('users').snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -117,7 +129,9 @@ class _MessageSenderScreenState extends State<MessageSenderScreen> {
                     return Center(child: Text('Error: ${snapshot.error}'));
                   } else if (snapshot.hasData) {
                     final users = snapshot.data?.docs ?? [];
-                    final userNames = users.map((user) => user.data() as Map<String, dynamic>).toList();
+                    final userNames = users
+                        .map((user) => user.data() as Map<String, dynamic>)
+                        .toList();
                     List<Widget> userListTiles = [];
                     for (int i = 0; i < chatUsers.length; i++) {
                       print('${widget.currentUserId}');
@@ -147,7 +161,8 @@ class _MessageSenderScreenState extends State<MessageSenderScreen> {
                                 ),
                               ),
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16),
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 12.0, horizontal: 16),
                                 child: Row(
                                   children: [
                                     Container(
@@ -156,13 +171,18 @@ class _MessageSenderScreenState extends State<MessageSenderScreen> {
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         image: DecorationImage(
-                                          image: NetworkImage(userName['userImage']),
+                                          image: NetworkImage(
+                                              userName['userImage']),
                                           fit: BoxFit.fill,
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(width: 22,),
-                                    Text(widget.currentUserId ==chatUsers[i]?'Me': userName['userName'] ?? ''),
+                                    const SizedBox(
+                                      width: 22,
+                                    ),
+                                    Text(widget.currentUserId == chatUsers[i]
+                                        ? 'Me'
+                                        : userName['userName'] ?? ''),
                                   ],
                                 ),
                               ),
@@ -190,9 +210,7 @@ class _MessageSenderScreenState extends State<MessageSenderScreen> {
 }
 
 class APIs {
-  // for authentication
   static FirebaseAuth auth = FirebaseAuth.instance;
 
-  //for accessing cloud firestore database
   static FirebaseFirestore firestore = FirebaseFirestore.instance;
 }

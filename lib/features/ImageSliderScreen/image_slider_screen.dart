@@ -1,11 +1,14 @@
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:tabeeby_app/features/navbar/navbar.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../HomeScreen/home_screen.dart';
+import '../chats/chat.dart';
 
 class ImageSliderScreen extends StatefulWidget {
+  final String currentUser;
   final String userId;
   final String title;
   final String itemColor, userNumber, description, address, itemPrice;
@@ -20,7 +23,7 @@ class ImageSliderScreen extends StatefulWidget {
     required this.address,
     required this.itemPrice,
     required this.lat,
-    required this.lng, required this.userId,
+    required this.lng, required this.userId, required this.currentUser,
   });
 
   @override
@@ -38,6 +41,7 @@ class _ImageSliderScreenState extends State<ImageSliderScreen> with SingleTicker
   }
 
   String? url;
+
 
   @override
   Widget build(BuildContext context) {
@@ -166,41 +170,36 @@ class _ImageSliderScreenState extends State<ImageSliderScreen> with SingleTicker
                 ),
               ),
               const SizedBox(height: 20.0,),
-              // location
-              // Center(
-              //   child: ConstrainedBox(
-              //     constraints: const BoxConstraints.tightFor(width: 368),
-              //     child: ElevatedButton(
-              //       onPressed: () async {
-              //         double latitude = widget.lat;
-              //         double longitude = widget.lng;
-              //
-              //         String url = 'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude';
-              //         try {
-              //           if (await canLaunch(url)) {
-              //             await launch(url);
-              //           } else {
-              //             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              //               content: Text("Could not open map. Please check your settings."),
-              //             ));
-              //           }
-              //         } catch (e) {
-              //           print("Error launching URL: $e");
-              //           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              //             content: Text("An error occurred while opening the map."),
-              //           ));
-              //         }
-              //       },
-              //
-              //       style: ButtonStyle(
-              //         backgroundColor: MaterialStateProperty.all(Colors.black54,),
-              //       ),
-              //       child: const Text("Check seller's location"),
-              //     ),
-              //   ),
-              // ),
+              Visibility(
+                visible: widget.userId!=widget.currentUser,
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints.tightFor(width: 368),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        // Navigate to chat screen
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChatScreen(
+                              currentUserId: widget.currentUser,
+                              chatUserId: widget.userId,
+                            ),
+                          ),
+                        );
+                      },
+
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all(Colors.black54,),
+                      ),
+                      child: const Text("chat with seller ",style: TextStyle(color: Colors.white),),
+                    ),
+                  ),
+                ),
+              ),
 
               const SizedBox(height: 20,),
+
             ],
           ),
         ),
