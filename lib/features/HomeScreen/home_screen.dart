@@ -64,7 +64,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => ProfileScreen(
-                      sellerId: uid,
+                      userId: uid, // Pass the user ID
+                      status: "approved",
                     ),
                   ),
                 );

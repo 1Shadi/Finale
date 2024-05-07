@@ -48,7 +48,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (messageText.isNotEmpty) {
       await FirebaseFirestore.instance.collection('messages').add({
         'sender': widget.currentUserId,
-        'recipient': widget.chatUserId,
+        'recipient': widget.chatUserId, // Set the recipient explicitly
         'text': messageText,
         'timestamp': Timestamp.now(),
       });
@@ -133,20 +133,41 @@ class _ChatScreenState extends State<ChatScreen> {
           child: Column(
             children: [
               Expanded(
-                child: StreamBuilder<QuerySnapshot>(
+                child:StreamBuilder<QuerySnapshot>(
                   stream: FirebaseFirestore.instance
                       .collection('messages')
-                      .where('recipient', whereIn: [widget.chatUserId, widget.currentUserId])
+                      .where('sender', isEqualTo: widget.currentUserId)
+                      .where('recipient', isEqualTo: widget.chatUserId)
                       .orderBy('timestamp')
                       .snapshots(),
                   builder: (context, snapshot) {
                     if (snapshot.hasData) {
-                      final messages = snapshot.data?.docs ?? [];
-                      return ListView.builder(
-                        controller: _scrollController,
-                        itemCount: messages.length,
-                        itemBuilder: (context, index) {
-                          return _buildMessageItem(context, messages[index]);
+                      final messagesSent = snapshot.data?.docs ?? [];
+                      return StreamBuilder<QuerySnapshot>(
+                        stream: FirebaseFirestore.instance
+                            .collection('messages')
+                            .where('sender', isEqualTo: widget.chatUserId)
+                            .where('recipient', isEqualTo: widget.currentUserId)
+                            .orderBy('timestamp')
+                            .snapshots(),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasData) {
+                            final messagesReceived = snapshot.data?.docs ?? [];
+                            final allMessages = [...messagesSent, ...messagesReceived];
+                            allMessages.sort((a, b) => (a['timestamp'] as Timestamp)
+                                .compareTo(b['timestamp'] as Timestamp));
+                            return ListView.builder(
+                              controller: _scrollController,
+                              itemCount: allMessages.length,
+                              itemBuilder: (context, index) {
+                                return _buildMessageItem(context, allMessages[index]);
+                              },
+                            );
+                          } else if (snapshot.hasError) {
+                            return Text('Error: ${snapshot.error}');
+                          } else {
+                            return const CircularProgressIndicator();
+                          }
                         },
                       );
                     } else if (snapshot.hasError) {
@@ -156,6 +177,10 @@ class _ChatScreenState extends State<ChatScreen> {
                     }
                   },
                 ),
+
+
+
+
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),

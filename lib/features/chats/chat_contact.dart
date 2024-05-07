@@ -32,14 +32,13 @@ class _MessageSenderScreenState extends State<MessageSenderScreen> {
         return [];
       }
 
-      // Query messages where the current user is the sender
+      // Query messages where the current user is the sender or recipient
       final QuerySnapshot senderMessages = await FirebaseFirestore.instance
           .collection('messages')
           .where('sender', isEqualTo: currentUser)
           .get();
       print('Sender messages: ${senderMessages.docs}');
 
-      // Query messages where the current user is the recipient
       final QuerySnapshot recipientMessages = await FirebaseFirestore.instance
           .collection('messages')
           .where('recipient', isEqualTo: currentUser)
@@ -95,31 +94,35 @@ class _MessageSenderScreenState extends State<MessageSenderScreen> {
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
-          title: Text('Chats'),
+          title: const Text('Chats'),
         ),
         body: FutureBuilder<List<String>>(
           future: _fetchChatUsersFuture,
           builder: (context, snapshot) {
-            if (snapshot.hasData) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            } else if (snapshot.hasData) {
               final chatUsers = snapshot.data!;
+              if (chatUsers.isEmpty) {
+                return const Center(child: Text('There are no chats yet',style: TextStyle(fontSize: 24),));
+              }
               return StreamBuilder<QuerySnapshot>(
-                stream:
-                    FirebaseFirestore.instance.collection('users').snapshots(),
+                stream: FirebaseFirestore.instance.collection('users').snapshots(),
                 builder: (context, snapshot) {
-                  if (snapshot.hasData) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  } else if (snapshot.hasData) {
                     final users = snapshot.data?.docs ?? [];
-                    if (users.isEmpty) {
-                      return CircularProgressIndicator();
-                    }
-                    final userNames = snapshot.data!.docs;
-                    if (userNames.length < chatUsers.length) {
-                      print('Not enough user data, waiting for more data...');
-                      return CircularProgressIndicator();
-                    }
+                    final userNames = users.map((user) => user.data() as Map<String, dynamic>).toList();
                     List<Widget> userListTiles = [];
                     for (int i = 0; i < chatUsers.length; i++) {
-                      final userName =
-                          userNames[i].data() as Map<String, dynamic>;
+                      print('${widget.currentUserId}');
+                      print('${chatUsers[i]}');
+                      final userName = userNames[i];
                       userListTiles.add(
                         GestureDetector(
                           onTap: () {
@@ -127,7 +130,7 @@ class _MessageSenderScreenState extends State<MessageSenderScreen> {
                               context,
                               MaterialPageRoute(
                                 builder: (_) => ChatScreen(
-                                  userName: userName['userName']??'',
+                                  userName: userName['userName'] ?? '',
                                   currentUserId: widget.currentUserId,
                                   chatUserId: chatUsers[i],
                                 ),
@@ -136,35 +139,34 @@ class _MessageSenderScreenState extends State<MessageSenderScreen> {
                           },
                           child: ListTile(
                             title: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white24,
-                                  border: Border.all(color: Colors.grey),
-                                  borderRadius: const BorderRadius.all(
-                                    Radius.circular(16),
-                                  ),
+                              decoration: BoxDecoration(
+                                color: Colors.white24,
+                                border: Border.all(color: Colors.grey),
+                                borderRadius: const BorderRadius.all(
+                                  Radius.circular(16),
                                 ),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 12.0, horizontal: 16),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 50,
-                                        height: 40,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          image: DecorationImage(
-                                            image: NetworkImage(userName['userImage'] ),
-                                            fit: BoxFit.fill,
-                                          ),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 50,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        image: DecorationImage(
+                                          image: NetworkImage(userName['userImage']),
+                                          fit: BoxFit.fill,
                                         ),
                                       ),
-                                      const SizedBox(width: 22,),
-                                      Text(userName['userName'] ?? ''),
-                                    ],
-                                  ),
-                                )),
-                            // subtitle: Text(chatUsers[i]),
+                                    ),
+                                    const SizedBox(width: 22,),
+                                    Text(widget.currentUserId ==chatUsers[i]?'Me': userName['userName'] ?? ''),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       );
@@ -172,17 +174,13 @@ class _MessageSenderScreenState extends State<MessageSenderScreen> {
                     return Column(
                       children: userListTiles,
                     );
-                  } else if (snapshot.hasError) {
-                    return Text('Error: ${snapshot.error}');
                   } else {
-                    return CircularProgressIndicator();
+                    return const Center(child: Text('No user data available'));
                   }
                 },
               );
-            } else if (snapshot.hasError) {
-              return Text('Error: ${snapshot.error}');
             } else {
-              return CircularProgressIndicator();
+              return const Center(child: Text('Unknown error'));
             }
           },
         ),

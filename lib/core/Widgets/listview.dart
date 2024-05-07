@@ -98,25 +98,20 @@ class _ListViewWidgetState extends State<ListViewWidget> {
           ),
           content: SingleChildScrollView(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextFormField(
-                  controller: userNameController,
-                  decoration: const InputDecoration(
-                    hintText: 'Enter your name',
-                  ),
-                ),
-                const SizedBox(height: 5.0),
-                TextFormField(
-                  controller: phoneNumberController,
-                  decoration: const InputDecoration(
-                    hintText: 'Enter your phone number',
-                  ),
-                ),
                 const SizedBox(height: 5.0),
                 TextFormField(
                   controller: itemPriceController,
                   decoration: const InputDecoration(
+                    label:  Text(
+                      'item price',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 20,
+                      ),
+                    ),
                     hintText: 'Enter your item price',
                   ),
                 ),
@@ -124,6 +119,13 @@ class _ListViewWidgetState extends State<ListViewWidget> {
                 TextFormField(
                   controller: itemNameController,
                   decoration: const InputDecoration(
+                    label:  Text(
+                      'item name ',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 20,
+                      ),
+                    ),
                     hintText: 'Enter your item name',
                   ),
                 ),
@@ -131,6 +133,13 @@ class _ListViewWidgetState extends State<ListViewWidget> {
                 TextFormField(
                   controller: itemModelController,
                   decoration: const InputDecoration(
+                    label:  Text(
+                      'item model',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 20,
+                      ),
+                    ),
                     hintText: 'Enter item model',
                   ),
                 ),
@@ -138,6 +147,13 @@ class _ListViewWidgetState extends State<ListViewWidget> {
                 TextFormField(
                   controller: itemDescriptionController,
                   decoration: const InputDecoration(
+                    label:  Text(
+                      'item description',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 20,
+                      ),
+                    ),
                     hintText: 'Enter item description',
                   ),
                 ),
@@ -334,21 +350,6 @@ class _ListViewWidgetState extends State<ListViewWidget> {
                         : Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => ChatScreen(
-                                        currentUserId: uid,
-                                        chatUserId: widget.userId,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                child:
-                                    const Icon(Icons.chat, color: Colors.white),
-                              ),
                               IconButton(
                                 onPressed: () {
                                   showDialogForUpdateData({
@@ -403,7 +404,9 @@ class _ListViewWidgetState extends State<ListViewWidget> {
                             widget.userImg,
                           ),
                         ),
-                        const SizedBox(width: 16,),
+                        const SizedBox(
+                          width: 16,
+                        ),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
