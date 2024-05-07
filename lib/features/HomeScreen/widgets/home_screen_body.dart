@@ -131,6 +131,7 @@ class _HomeScreenBodyState extends State<HomeScreenBody> {
                   itemCount: snapshot.data!.docs.length,
                   itemBuilder: (context, index) {
                     return ListViewWidget(
+                      currentUser: widget.user.uid,
                       docId: snapshot.data!.docs[index].id,
                       itemColor: snapshot.data!.docs[index]['itemColor'],
                       urlslist: snapshot.data!.docs[index]['urlslist'],
