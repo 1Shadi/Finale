@@ -1,28 +1,29 @@
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:tabeeby_app/features/navbar/navbar.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../HomeScreen/home_screen.dart';
+import '../chats/chat.dart';
 
 class ImageSliderScreen extends StatefulWidget {
-  final String title, urlImage1, urlImage2, urlImage3, urlImage4, urlImage5;
+  final String currentUser;
+  final String userId;
+  final String title;
   final String itemColor, userNumber, description, address, itemPrice;
   final double lat, lng;
-
+  final List<String> urlslist;
   const ImageSliderScreen({super.key,
     required this.title,
-    required this.urlImage1,
-    required this.urlImage2,
-    required this.urlImage3,
-    required this.urlImage4,
-    required this.urlImage5,
+    required this.urlslist,
     required this.itemColor,
     required this.userNumber,
     required this.description,
     required this.address,
     required this.itemPrice,
     required this.lat,
-    required this.lng,
+    required this.lng, required this.userId, required this.currentUser,
   });
 
   @override
@@ -36,17 +37,11 @@ class _ImageSliderScreenState extends State<ImageSliderScreen> with SingleTicker
   @override
   void initState() {
     super.initState();
-    links = [
-      widget.urlImage1,
-      widget.urlImage2,
-      widget.urlImage3,
-      widget.urlImage4,
-      widget.urlImage5,
-    ];
     tabController = TabController(length: 5, vsync: this);
   }
 
   String? url;
+
 
   @override
   Widget build(BuildContext context) {
@@ -64,6 +59,7 @@ class _ImageSliderScreenState extends State<ImageSliderScreen> with SingleTicker
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
+
           flexibleSpace: Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -82,10 +78,7 @@ class _ImageSliderScreenState extends State<ImageSliderScreen> with SingleTicker
           centerTitle: true,
           leading: IconButton(
             onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) =>  const HomeScreen()),
-              );
+              Navigator.push(context, MaterialPageRoute(builder: (context) => NavBar(currentUserId: widget.userId)));
             },
             icon: const Icon(Icons.arrow_back, color: Colors.teal),
           ),
@@ -117,19 +110,24 @@ class _ImageSliderScreenState extends State<ImageSliderScreen> with SingleTicker
                 height: size.height * 0.5,
                 width: size.width,
                 child: Padding(
-                  padding: const EdgeInsets.all(2),
-                  child: CarouselSlider(
-                    items: links.map((link) => Image.network(link)).toList(),
-                    options: CarouselOptions(
-                      autoPlay: true,
-                      autoPlayInterval: const Duration(seconds: 2),
-                      autoPlayAnimationDuration: const Duration(milliseconds: 500),
-                      autoPlayCurve: Curves.easeIn,
-                      pauseAutoPlayOnTouch: true,
-                      viewportFraction: 1,
-                      aspectRatio: 1,
-                    ),
-                  ),
+                    padding: const EdgeInsets.all(2),
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: widget.urlslist.length,
+                      itemBuilder: (context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 18.0),
+                          child: Container(
+                            margin: const EdgeInsets.all(8),
+                            child: Image.network(
+                              widget.urlslist[index],
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        );
+                      },
+                    )
+
                 ),
               ),
               Padding(
@@ -153,13 +151,6 @@ class _ImageSliderScreenState extends State<ImageSliderScreen> with SingleTicker
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.brush_outlined),
-                        const SizedBox(width: 10.0),
-                        Text(widget.itemColor),
-                      ],
-                    ),
-                    Row(
-                      children: [
                         const Icon(Icons.phone_android),
                         const SizedBox(width: 10.0),
                         Text(widget.userNumber),
@@ -179,41 +170,36 @@ class _ImageSliderScreenState extends State<ImageSliderScreen> with SingleTicker
                 ),
               ),
               const SizedBox(height: 20.0,),
-              Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints.tightFor(width: 368),
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      double latitude = widget.lat;
-                      double longitude = widget.lng;
+              Visibility(
+                visible: widget.userId!=widget.currentUser,
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints.tightFor(width: 368),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        // Navigate to chat screen
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChatScreen(
+                              currentUserId: widget.currentUser,
+                              chatUserId: widget.userId,
+                            ),
+                          ),
+                        );
+                      },
 
-                      String url = 'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude';
-                      try {
-                        if (await canLaunch(url)) {
-                          await launch(url);
-                        } else {
-                          // Show snackbar or dialog indicating the issue with launching the URL
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                            content: Text("Could not open map. Please check your settings."),
-                          ));
-                        }
-                      } catch (e) {
-                        print("Error launching URL: $e");
-                        // Show snackbar or dialog indicating the error
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                          content: Text("An error occurred while opening the map."),
-                        ));
-                      }
-                    },
-
-                    style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all(Colors.black54,),
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all(Colors.black54,),
+                      ),
+                      child: const Text("chat with seller ",style: TextStyle(color: Colors.white),),
                     ),
-                    child: const Text("Check seller's location"),
                   ),
                 ),
               ),
+
               const SizedBox(height: 20,),
+
             ],
           ),
         ),

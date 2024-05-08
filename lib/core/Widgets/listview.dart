@@ -5,32 +5,20 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 
 import '../../features/ImageSliderScreen/image_slider_screen.dart';
+import '../../features/chats/chat.dart';
 
 class ListViewWidget extends StatefulWidget {
-  final String docId,
-      itemColor,
-      img1,
-      img2,
-      img3,
-      img4,
-      img5,
-      userImg,
-      name,
-      userId,
-      itemModel,
-      postId;
+  final String docId, itemColor, userImg, name, userId, itemModel, postId;
   final String itemPrice, description, address, userNumber;
   final DateTime date;
   final double lat, lng;
+  final List<String> urlslist;
+  final String currentUser;
 
   const ListViewWidget({
+    super.key,
     required this.docId,
     required this.itemColor,
-    required this.img1,
-    required this.img2,
-    required this.img3,
-    required this.img4,
-    required this.img5,
     required this.userImg,
     required this.name,
     required this.date,
@@ -43,6 +31,7 @@ class ListViewWidget extends StatefulWidget {
     required this.lng,
     required this.address,
     required this.userNumber,
+    required this.urlslist, required this.currentUser,
   });
 
   @override
@@ -58,6 +47,7 @@ class _ListViewWidgetState extends State<ListViewWidget> {
   late TextEditingController itemNameController;
   late TextEditingController itemModelController;
   late TextEditingController itemDescriptionController;
+  late List<String> urlslist;
 
   @override
   void initState() {
@@ -86,7 +76,8 @@ class _ListViewWidgetState extends State<ListViewWidget> {
 
   Future<void> showDialogForUpdateData(Map<String, String> map) async {
     selectedDoc = map['docId']!; // Set the selectedDoc to the document ID
-    userNameController.text = map['name']!; // Set initial values for text controllers
+    userNameController.text =
+        map['name']!; // Set initial values for text controllers
     phoneNumberController.text = map['userNumber']!;
     itemPriceController.text = map['itemPrice']!;
     itemNameController.text = map['itemModel']!;
@@ -108,25 +99,20 @@ class _ListViewWidgetState extends State<ListViewWidget> {
           ),
           content: SingleChildScrollView(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextFormField(
-                  controller: userNameController,
-                  decoration: const InputDecoration(
-                    hintText: 'Enter your name',
-                  ),
-                ),
-                const SizedBox(height: 5.0),
-                TextFormField(
-                  controller: phoneNumberController,
-                  decoration: const InputDecoration(
-                    hintText: 'Enter your phone number',
-                  ),
-                ),
                 const SizedBox(height: 5.0),
                 TextFormField(
                   controller: itemPriceController,
                   decoration: const InputDecoration(
+                    label:  Text(
+                      'item price',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 20,
+                      ),
+                    ),
                     hintText: 'Enter your item price',
                   ),
                 ),
@@ -134,6 +120,13 @@ class _ListViewWidgetState extends State<ListViewWidget> {
                 TextFormField(
                   controller: itemNameController,
                   decoration: const InputDecoration(
+                    label:  Text(
+                      'item name ',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 20,
+                      ),
+                    ),
                     hintText: 'Enter your item name',
                   ),
                 ),
@@ -141,6 +134,13 @@ class _ListViewWidgetState extends State<ListViewWidget> {
                 TextFormField(
                   controller: itemModelController,
                   decoration: const InputDecoration(
+                    label:  Text(
+                      'item model',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 20,
+                      ),
+                    ),
                     hintText: 'Enter item model',
                   ),
                 ),
@@ -148,6 +148,13 @@ class _ListViewWidgetState extends State<ListViewWidget> {
                 TextFormField(
                   controller: itemDescriptionController,
                   decoration: const InputDecoration(
+                    label:  Text(
+                      'item description',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 20,
+                      ),
+                    ),
                     hintText: 'Enter item description',
                   ),
                 ),
@@ -166,7 +173,8 @@ class _ListViewWidgetState extends State<ListViewWidget> {
               onPressed: () {
                 Navigator.pop(context);
                 updateProfileNameOnExistingPost(userNameController.text);
-                _updateUserName(userNameController.text, phoneNumberController.text);
+                _updateUserName(
+                    userNameController.text, phoneNumberController.text);
 
                 FirebaseFirestore.instance
                     .collection('items')
@@ -195,89 +203,6 @@ class _ListViewWidgetState extends State<ListViewWidget> {
       },
     );
   }
-  // Future<void> showDialogForUpdateData(Map<String, dynamic> itemData) async {
-  //   // Extract relevant data from itemData and assign it to respective fields
-  //   selectedDoc = itemData['docId'];
-  //   oldUserName = itemData['name'];
-  //   oldPhoneNumber = itemData['userNumber'];
-  //   oldItemPrice = itemData['itemPrice'];
-  //   oldItemModel = itemData['itemModel'];
-  //   oldItemDescription = itemData['description'];
-  //   oldItemName = itemData['itemModel'];
-  //
-  //   return showDialog(
-  //     context: context,
-  //     barrierDismissible: false,
-  //     builder: (BuildContext context) {
-  //       return AlertDialog(
-  //         title: const Text(
-  //           'Update Data',
-  //           style: TextStyle(
-  //             fontSize: 24,
-  //             fontFamily: 'Bebas',
-  //             letterSpacing: 2.0,
-  //           ),
-  //         ),
-  //         content: SingleChildScrollView(
-  //           child: Column(
-  //             mainAxisSize: MainAxisSize.min,
-  //             children: [
-  //               TextFormField(
-  //                 initialValue: oldUserName,
-  //                 decoration: const InputDecoration(
-  //                   hintText: 'Enter your name',
-  //                 ),
-  //                 onChanged: (value) {
-  //                   setState(() {
-  //                     oldUserName = value;
-  //                   });
-  //                 },
-  //               ),
-  //               // Add other TextFormField widgets for other fields
-  //               // ...
-  //             ],
-  //           ),
-  //         ),
-  //         actions: [
-  //           ElevatedButton(
-  //             onPressed: () {
-  //               Navigator.pop(context);
-  //             },
-  //             child: const Text('Cancel'),
-  //           ),
-  //           ElevatedButton(
-  //             onPressed: () {
-  //               Navigator.pop(context);
-  //               updateProfileNameOnExistingPost(oldUserName);
-  //               _updateUserName(oldUserName, oldPhoneNumber);
-  //
-  //               FirebaseFirestore.instance
-  //                   .collection('items')
-  //                   .doc(selectedDoc)
-  //                   .update({
-  //                 'userName': oldUserName,
-  //                 'userNumber': oldPhoneNumber,
-  //                 'itemPrice': oldItemPrice,
-  //                 'itemModel': oldItemName,
-  //                 'description': oldItemDescription,
-  //               }).then((_) {
-  //                 Fluttertoast.showToast(
-  //                   msg: 'The task has been uploaded',
-  //                   toastLength: Toast.LENGTH_LONG,
-  //                   backgroundColor: Colors.grey,
-  //                   fontSize: 18.0,
-  //                 );
-  //               }).catchError((onError) {
-  //                 print(onError);
-  //               });
-  //             },
-  //             child: const Text('Update Now'),
-  //           ),
-  //         ],
-  //       );
-  //     },
-  //   );
-  // }
 
   Future<void> updateProfileNameOnExistingPost(String oldUserName) async {
     await FirebaseFirestore.instance
@@ -329,23 +254,20 @@ class _ListViewWidgetState extends State<ListViewWidget> {
           setState(() {
             oldUserName = userData['userName'];
             oldPhoneNumber = userData['userNumber'];
-            oldItemPrice = itemData['itemPrice']; // Assign itemPrice from itemData
-            oldItemModel = itemData['itemModel']; // Assign itemModel from itemData
-            oldItemDescription = itemData['description']; // Assign description from itemData
-            oldItemName = itemData['itemModel']; // Assign itemName from itemData
+            oldItemPrice =
+                itemData['itemPrice']; // Assign itemPrice from itemData
+            oldItemModel =
+                itemData['itemModel']; // Assign itemModel from itemData
+            oldItemDescription =
+                itemData['description']; // Assign description from itemData
+            oldItemName =
+                itemData['itemModel']; // Assign itemName from itemData
           });
           break;
         }
       }
     }
   }
-  //
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   uid = FirebaseAuth.instance.currentUser!.uid;
-  //   getUserData();
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -375,25 +297,22 @@ class _ListViewWidgetState extends State<ListViewWidget> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => ImageSliderScreen(
-                        title: widget.itemModel,
-                        itemColor: widget.itemColor,
-                        userNumber: widget.userNumber,
-                        description: widget.description,
-                        lat: widget.lat,
-                        lng: widget.lng,
-                        address: widget.address,
-                        itemPrice: widget.itemPrice,
-                        urlImage1: widget.img1,
-                        urlImage2: widget.img2,
-                        urlImage3: widget.img3,
-                        urlImage4: widget.img4,
-                        urlImage5: widget.img5,
-                      ),
+                          userId: widget.userId,
+                          currentUser:widget.currentUser,
+                          title: widget.itemModel,
+                          itemColor: widget.itemColor,
+                          userNumber: widget.userNumber,
+                          description: widget.description,
+                          lat: widget.lat,
+                          lng: widget.lng,
+                          address: widget.address,
+                          itemPrice: widget.itemPrice,
+                          urlslist: widget.urlslist),
                     ),
                   );
                 },
                 child: Image.network(
-                  widget.img1,
+                  widget.urlslist[0],
                   fit: BoxFit.cover,
                 ),
               ),
@@ -406,101 +325,125 @@ class _ListViewWidgetState extends State<ListViewWidget> {
                   right: 8.0,
                   bottom: 8.0,
                 ),
-                child: Row(
+                child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    CircleAvatar(
-                      radius: 30,
-                      backgroundImage: NetworkImage(
-                        widget.userImg,
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.name,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 5.0,
-                        ),
-                        Text(
-                          widget.itemModel,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.white60,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 8.0,
-                        ),
-                        Text(
-                          DateFormat('dd MMM, yyyy - hh:mm a')
-                              .format(widget.date)
-                              .toString(),
-                          style: const TextStyle(
-                            color: Colors.white60,
-                          ),
-                        ),
-                      ],
-                    ),
                     widget.userId != uid
-                        ? const Padding(
-                      padding: EdgeInsets.only(right: 50.0),
-                      child: Column(),
-                    )
-                        : Column(
-                      mainAxisSize: MainAxisSize.min,
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ChatScreen(
+                                        currentUserId: FirebaseAuth
+                                            .instance.currentUser!.uid,
+                                        chatUserId: widget.userId,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child:
+                                    const Icon(Icons.chat, color: Colors.white),
+                              ),
+                            ],
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              IconButton(
+                                onPressed: () {
+                                  showDialogForUpdateData({
+                                    'docId': widget.docId,
+                                    'name': widget.name,
+                                    'userNumber': widget.userNumber,
+                                    'itemPrice': widget.itemPrice,
+                                    'itemModel': widget.itemModel,
+                                    'description': widget.description,
+                                    // Add other fields as needed
+                                  });
+                                },
+                                icon: const Padding(
+                                  padding: EdgeInsets.only(left: 20.0),
+                                  child: Icon(
+                                    Icons.edit_note,
+                                    color: Colors.white,
+                                    size: 27,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: () {
+                                  FirebaseFirestore.instance
+                                      .collection('items')
+                                      .doc(widget.postId)
+                                      .delete();
+
+                                  Fluttertoast.showToast(
+                                    msg: 'Post has been deleted',
+                                    toastLength: Toast.LENGTH_LONG,
+                                    backgroundColor: Colors.grey,
+                                    fontSize: 18.0,
+                                  );
+                                },
+                                icon: const Padding(
+                                  padding: EdgeInsets.only(left: 20.0),
+                                  child: Icon(
+                                    Icons.delete_forever,
+                                    size: 22,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                    Row(
                       children: [
-                        IconButton(
-                          onPressed: () {
-                            showDialogForUpdateData({
-                              'docId': widget.docId,
-                              'name': widget.name,
-                              'userNumber': widget.userNumber,
-                              'itemPrice': widget.itemPrice,
-                              'itemModel': widget.itemModel,
-                              'description': widget.description,
-                              // Add other fields as needed
-                            });
-                          },
-                          icon: const Padding(
-                            padding: EdgeInsets.only(left: 20.0),
-                            child: Icon(
-                              Icons.edit_note,
-                              color: Colors.white,
-                              size: 27,
-                            ),
+                        CircleAvatar(
+                          radius: 30,
+                          backgroundImage: NetworkImage(
+                            widget.userImg,
                           ),
                         ),
-                        IconButton(
-                          onPressed: () {
-                            FirebaseFirestore.instance
-                                .collection('items')
-                                .doc(widget.postId)
-                                .delete();
-
-                            Fluttertoast.showToast(
-                              msg: 'Post has been deleted',
-                              toastLength: Toast.LENGTH_LONG,
-                              backgroundColor: Colors.grey,
-                              fontSize: 18.0,
-                            );
-                          },
-                          icon: const Padding(
-                            padding: EdgeInsets.only(left: 20.0),
-                            child: Icon(
-                              Icons.delete_forever,
-                              size: 22,
-                              color: Colors.white,
+                        const SizedBox(
+                          width: 16,
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.name,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
+                            const SizedBox(
+                              height: 5.0,
+                            ),
+                            Text(
+                              widget.itemModel,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Colors.white60,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(
+                              height: 8.0,
+                            ),
+                            Text(
+                              DateFormat('dd MMM, yyyy - hh:mm a')
+                                  .format(widget.date)
+                                  .toString(),
+                              style: const TextStyle(
+                                color: Colors.white60,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),

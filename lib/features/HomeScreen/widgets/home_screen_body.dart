@@ -65,7 +65,7 @@ class _HomeScreenBodyState extends State<HomeScreenBody> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ProfileScreen(sellerId: widget.user.uid),
+                    builder: (context) => ProfileScreen(userId: widget.user.uid,status:'sometinh' ,),
                   ),
                 );
               },
@@ -131,13 +131,10 @@ class _HomeScreenBodyState extends State<HomeScreenBody> {
                   itemCount: snapshot.data!.docs.length,
                   itemBuilder: (context, index) {
                     return ListViewWidget(
+                      currentUser: widget.user.uid,
                       docId: snapshot.data!.docs[index].id,
                       itemColor: snapshot.data!.docs[index]['itemColor'],
-                      img1: snapshot.data!.docs[index]['urlImage1'],
-                      img2: snapshot.data!.docs[index]['urlImage2'],
-                      img3: snapshot.data!.docs[index]['urlImage3'],
-                      img4: snapshot.data!.docs[index]['urlImage4'],
-                      img5: snapshot.data!.docs[index]['urlImage5'],
+                      urlslist: snapshot.data!.docs[index]['urlslist'],
                       userImg: snapshot.data!.docs[index]['imgPro'],
                       name: snapshot.data!.docs[index]['userName'],
                       date: snapshot.data!.docs[index]['time'].toDate(),

@@ -1,8 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../core/Widgets/global_var.dart';
 import '../core/Widgets/listview.dart';
 import '../features/HomeScreen/home_screen.dart';
+import '../features/ProfileScreen/profile_screen.dart';
+import '../features/navbar/navbar.dart';
 
 class SearchProduct extends StatefulWidget {
   const SearchProduct({Key? key}) : super(key: key);
@@ -18,6 +22,27 @@ class _SearchProductState extends State<SearchProduct> {
   final TextEditingController _addressController = TextEditingController();
   String searchQuery = '';
   bool _isSearching = false;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      uid = currentUser.uid;
+      userEmail = currentUser.email!;
+      getMyData();
+    }
+  }
+
+  Future<void> getMyData() async {
+    final userData =
+    await FirebaseFirestore.instance.collection('users').doc(uid).get();
+    setState(() {
+      userImageUrl = userData['userImage'];
+      getUserName = userData['userName'];
+    });
+  }
 
   Widget _buildSearchField() {
     return TextField(
@@ -49,7 +74,7 @@ class _SearchProductState extends State<SearchProduct> {
           },
         ),
         IconButton(
-          icon: Icon(Icons.filter_alt),
+          icon: const Icon(Icons.filter_alt),
           onPressed: () async {
             await showDialog<void>(
               context: context,
@@ -62,20 +87,20 @@ class _SearchProductState extends State<SearchProduct> {
                       TextFormField(
                         controller: _minPriceController,
                         keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           labelText: 'Min Price',
                         ),
                       ),
                       TextFormField(
                         controller: _maxPriceController,
                         keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           labelText: 'Max Price',
                         ),
                       ),
                       TextFormField(
                         controller: _addressController,
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           labelText: 'Address',
                         ),
                       ),
@@ -128,23 +153,16 @@ class _SearchProductState extends State<SearchProduct> {
   }
 
   _buildTitle(BuildContext context) {
-    return const Text('Search Product');
-  }
-
-  _buildBackButton() {
-    return IconButton(
-      icon: const Icon(
-        Icons.arrow_back,
-        color: Colors.white,
+    return const Text(
+      'Search Screen',
+      style: TextStyle(
+        color: Colors.black54,
+        fontFamily: 'Signatra',
+        fontSize: 30,
       ),
-      onPressed: () {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
-      },
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -152,7 +170,7 @@ class _SearchProductState extends State<SearchProduct> {
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Colors.deepOrange,
+            Colors.orange,
             Colors.teal,
           ],
           begin: Alignment.centerLeft,
@@ -162,28 +180,114 @@ class _SearchProductState extends State<SearchProduct> {
         ),
       ),
       child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          leading: _isSearching ? const BackButton() : _buildBackButton(),
-          title: _isSearching ? _buildSearchField() : _buildTitle(context),
-          actions: _buildActions(),
-          flexibleSpace: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.deepOrange,
-                  Colors.teal,
-                ],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                stops: [0.0, 1.0],
-                tileMode: TileMode.clamp,
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            leading: IconButton(onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      NavBar(currentUserId: uid,),
+                ),
+              );
+            }, icon: Icon(Icons.chevron_left),
+            ),
+
+            title: _isSearching ? _buildSearchField() : _buildTitle(context),
+            flexibleSpace: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.orange,
+                    Colors.teal,
+                  ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  stops: [0.0, 1.0],
+                  tileMode: TileMode.clamp,
+                ),
               ),
             ),
+
           ),
-        ),
-        body: _buildFilteredResults()
-      ),
+          body: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  _isSearching
+                      ? Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _clearSearchQuery();
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.filter_alt),
+                        onPressed: () async {
+                          await showDialog<void>(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: const Text('Filter'),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: <Widget>[
+                                    TextFormField(
+                                      controller: _minPriceController,
+                                      keyboardType: TextInputType.number,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Min Price',
+                                      ),
+                                    ),
+                                    TextFormField(
+                                      controller: _maxPriceController,
+                                      keyboardType: TextInputType.number,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Max Price',
+                                      ),
+                                    ),
+                                    TextFormField(
+                                      controller: _addressController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Address',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                actions: <Widget>[
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    },
+                                    child: const Text('Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      _startSearch();
+                                      Navigator.pop(context);
+                                    },
+                                    child: const Text('Apply'),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ],
+                  )
+                      : IconButton(
+                    icon: const Icon(Icons.search),
+                    onPressed: _startSearch,
+                  ),
+                ],
+              ),
+              Expanded(child: _buildFilteredResults()),
+            ],
+          )),
     );
   }
 
@@ -193,7 +297,8 @@ class _SearchProductState extends State<SearchProduct> {
           .collection('items')
           .where('status', isEqualTo: 'approved')
           .snapshots(),
-      builder: (context, AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot) {
+      builder: (context,
+          AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
             child: CircularProgressIndicator(),
@@ -205,20 +310,22 @@ class _SearchProductState extends State<SearchProduct> {
             return itemModel.contains(searchQueryLower);
           }).toList();
 
-          if (docs.isNotEmpty) {
+          final filteredDocs = docs.where((doc) {
+            final address = doc['address'].toString().toLowerCase();
+            final filterAddress = _addressController.text.toLowerCase();
+            return address.contains(filterAddress);
+          }).toList();
+
+          if (filteredDocs.isNotEmpty) {
             return ListView.builder(
-              itemCount: docs.length,
+              itemCount: filteredDocs.length,
               itemBuilder: (BuildContext context, int index) {
-                final item = docs[index].data();
+                final item = filteredDocs[index].data();
                 final itemColor = item['itemColor'];
                 return ListViewWidget(
-                  docId: docs[index].id,
+                  docId: filteredDocs[index].id,
                   itemColor: itemColor is String ? itemColor : '',
-                  img1: item['urlImage1'],
-                  img2: item['urlImage2'],
-                  img3: item['urlImage3'],
-                  img4: item['urlImage4'],
-                  img5: item['urlImage5'],
+                  urlslist: (item['urlImage'] as List<dynamic>).cast<String>(),
                   userImg: item['imgPro'],
                   name: item['userName'],
                   date: item['time'].toDate(),
@@ -230,13 +337,13 @@ class _SearchProductState extends State<SearchProduct> {
                   lat: (item['lat'] as num?)?.toDouble() ?? 0.0,
                   lng: (item['lng'] as num?)?.toDouble() ?? 0.0,
                   address: item['address'],
-                  userNumber: item['userNumber'],
+                  userNumber: item['userNumber'], currentUser: uid,
                 );
               },
             );
           } else {
             return const Center(
-              child: Text('No items match the search query'),
+              child: Text('No items '),
             );
           }
         } else {

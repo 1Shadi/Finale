@@ -1,19 +1,21 @@
 import 'dart:io';
-import 'package:path/path.dart' as Path;
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:path/path.dart' as Path;
 import 'package:tabeeby_app/features/HomeScreen/home_screen.dart';
+import 'package:tabeeby_app/features/navbar/navbar.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/DialogBox/loading_dialog.dart';
 import '../../core/Widgets/global_var.dart';
 
 class UploadAdScreen extends StatefulWidget {
-  const UploadAdScreen({super.key});
+  const UploadAdScreen({Key? key}) : super(key: key);
 
   @override
   State<UploadAdScreen> createState() => _UploadAdScreenState();
@@ -33,7 +35,6 @@ class _UploadAdScreenState extends State<UploadAdScreen> {
   String itemWeight = '';
   String description = '';
   String address = '';
-  // Define variables for user's location
   double? latitude;
   double? longitude;
 
@@ -42,27 +43,102 @@ class _UploadAdScreenState extends State<UploadAdScreen> {
     final pickedFile = await picker.pickImage(source: source);
     if (pickedFile != null) {
       setState(() {
-        _image.add(File(pickedFile.path)); // Add picked image to _image list
+        _image.add(File(pickedFile.path));
       });
     }
   }
 
-  Future<void> uploadFile() async {
-    int i = 1;
-    for (var img in _image) {
-      setState(() {
-        val = i / _image.length;
-      });
-      var ref = FirebaseStorage.instance
-          .ref()
-          .child('image/${Path.basename(img.path)}');
+  // Future<void> uploadFile() async {
+  //   int i = 1;
+  //   for (var img in _image) {
+  //     setState(() {
+  //       val = i / _image.length;
+  //     });
+  //     var ref = FirebaseStorage.instance
+  //         .ref()
+  //         .child('image/${Path.basename(img.path)}');
+  //
+  //     await ref.putFile(img).whenComplete(() async {
+  //       await ref.getDownloadURL().then((value) {
+  //         urlslist.add(value);
+  //         i++;
+  //       });
+  //     });
+  //   }
+  // }
 
-      await ref.putFile(img).whenComplete(() async {
-        await ref.getDownloadURL().then((value) {
-          urlslist.add(value);
-          i++;
+  Future<void> uploadFile() async {
+    List<String> downloadUrls = [];
+    int i = 1;
+    try {
+      for (var img in _image) {
+        setState(() {
+          val = i / _image.length;
         });
+        var ref = FirebaseStorage.instance
+            .ref()
+            .child('image/${Path.basename(img.path)}');
+
+        await ref.putFile(img);
+
+        var downloadUrl = await ref.getDownloadURL();
+        downloadUrls.add(downloadUrl);
+        i++;
+      }
+
+      // After all images are uploaded, set the urlslist and proceed to upload data
+      setState(() {
+        urlslist = downloadUrls;
       });
+
+      // Empty the _image list to free up memory
+      _image.clear();
+    } catch (error) {
+      print('Error uploading file: $error');
+      Fluttertoast.showToast(
+        msg: 'An error occurred while uploading file',
+      );
+    }
+  }
+
+  Future<void> uploadData() async {
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser != null) {
+        await FirebaseFirestore.instance.collection('items').doc(postId).set({
+          'userName': name,
+          'id': currentUser.uid,
+          'postId': postId,
+          'userNumber': phoneNo,
+          'itemPrice': itemPrice,
+          'itemModel': itemModel,
+          'itemWeight': itemWeight,
+          'description': description,
+          'urlslist': urlslist,
+          'imgPro': userImageUrl,
+          'lst': latitude,
+          'lng': longitude,
+          'address': address,
+          'time': DateTime.now(),
+          'status': 'approved',
+        });
+
+        Fluttertoast.showToast(
+          msg: 'Data added successfully....',
+        );
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => NavBar(currentUserId: currentUser.uid),
+          ),
+        );
+      }
+    } catch (error) {
+      print('Error uploading data: $error');
+      Fluttertoast.showToast(
+        msg: 'An error occurred while uploading data',
+      );
     }
   }
 
@@ -88,16 +164,10 @@ class _UploadAdScreenState extends State<UploadAdScreen> {
   void initState() {
     super.initState();
     getNameOfUser();
-    // Initialize user's location
     getLocation();
   }
 
-  // Method to get user's location
-  void getLocation() {
-    // Implement the logic to retrieve user's location coordinates
-    // For example, you can use a location plugin like geolocator
-    // Set the latitude and longitude variables accordingly
-  }
+  void getLocation() {}
 
   @override
   Widget build(BuildContext context) {
@@ -126,7 +196,7 @@ class _UploadAdScreenState extends State<UploadAdScreen> {
             ),
           ),
           title: Text(
-            next ? "Please write products info" : "Choose product's image",
+            next ? "Please write product info" : "Choose product image(s)",
             style: const TextStyle(
               color: Colors.black54,
               fontFamily: 'Signatra',
@@ -137,214 +207,209 @@ class _UploadAdScreenState extends State<UploadAdScreen> {
             next
                 ? Container()
                 : ElevatedButton(
-              onPressed: () {
-                if (_image.length == 5) {
-                  setState(() {
-                    uploading = true;
-                    next = true;
-                  });
-                } else {
-                  Fluttertoast.showToast(
-                    msg: 'Please select 5 images only.',
-                    gravity: ToastGravity.CENTER,
-                  );
-                }
-              },
-              child: const Text(
-                'Next',
-                style: TextStyle(
-                  fontSize: 19,
-                  color: Colors.black54,
-                  fontFamily: 'Varela',
-                ),
-              ),
-            ),
+                    onPressed: () {
+                      if (_image.isNotEmpty) {
+                        setState(() {
+                          uploading = true;
+                          next = true;
+                        });
+                      } else {
+                        Fluttertoast.showToast(
+                          msg: 'Please select product images',
+                          gravity: ToastGravity.CENTER,
+                        );
+                      }
+                    },
+                    child: const Text(
+                      'Next',
+                      style: TextStyle(
+                        fontSize: 19,
+                        color: Colors.black54,
+                        fontFamily: 'Varela',
+                      ),
+                    ),
+                  ),
           ],
         ),
         body: next
             ? SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(30),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 5.0),
-                TextField(
-                  decoration: const InputDecoration(
-                    hintText: 'Enter Product Price',
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      itemPrice = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 5.0),
-                TextField(
-                  decoration: const InputDecoration(
-                    hintText: 'Enter Product Name',
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      itemModel = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 5.0),
-                TextField(
-                  decoration: const InputDecoration(
-                    hintText: 'Enter Product Weight',
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      itemWeight = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 5.0),TextField(
-                  decoration: const InputDecoration(
-                    hintText: 'Enter the address',
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      address = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 5.0),
-                TextField(
-                  decoration: const InputDecoration(
-                    hintText: 'Write a description',
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      description = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 15.0),
-                SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.5,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) {
-                          return const LoadingAlertDialog(
-                            message: 'Uploading...',
-                          );
+                child: Padding(
+                  padding: const EdgeInsets.all(30),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 5.0),
+                      TextField(
+                        decoration: const InputDecoration(
+                          hintText: 'Enter Product Price',
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            itemPrice = value;
+                          });
                         },
-                      );
-                      uploadFile().whenComplete(() {
-                        FirebaseFirestore.instance
-                            .collection('items')
-                            .doc(postId)
-                            .set({
-                          'userName': name,
-                          'id': _auth.currentUser!.uid,
-                          'postId': postId,
-                          'userNumber': phoneNo,
-                          'itemPrice': itemPrice,
-                          'itemModel': itemModel,
-                          'itemWeight': itemWeight,
-                          'description': description,
-                          'urlImage1': urlslist[0].toString(),
-                          'urlImage2': urlslist[1].toString(),
-                          'urlImage3': urlslist[2].toString(),
-                          'urlImage4': urlslist[3].toString(),
-                          'urlImage5': urlslist[4].toString(),
-                          'imgPro': userImageUrl,
-                          'lst': latitude,
-                          'lng': longitude,
-                          'address': address,
-                          'time': DateTime.now(),
-                          'status': 'approved',
-                        });
-                        Fluttertoast.showToast(
-                          msg: 'Data added successfully....',
-                        );
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const HomeScreen(),
-                          ),
-                        );
-                      }).catchError((onError) {
-                        print(onError);
-                      });
-                    },
-                    child: const Text(
-                      'Upload',
-                      style: TextStyle(
-                        color: Colors.white,
                       ),
-                    ),
+                      const SizedBox(height: 5.0),
+                      TextField(
+                        decoration: const InputDecoration(
+                          hintText: 'Enter Product Name',
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            itemModel = value;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 5.0),
+                      TextField(
+                        decoration: const InputDecoration(
+                          hintText: 'Enter Product Weight',
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            itemWeight = value;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 5.0),
+                      TextField(
+                        decoration: const InputDecoration(
+                          hintText: 'Enter the address',
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            address = value;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 5.0),
+                      TextField(
+                        decoration: const InputDecoration(
+                          hintText: 'Write a description',
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            description = value;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 15.0),
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width * 0.5,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) {
+                                return const LoadingAlertDialog(
+                                  message: 'Uploading...',
+                                );
+                              },
+                            );
+                            uploadFile().whenComplete(() {
+                              FirebaseFirestore.instance
+                                  .collection('items')
+                                  .doc(postId)
+                                  .set({
+                                'userName': name,
+                                'id': _auth.currentUser!.uid,
+                                'postId': postId,
+                                'userNumber': phoneNo,
+                                'itemPrice': itemPrice,
+                                'itemModel': itemModel,
+                                'itemWeight': itemWeight,
+                                'description': description,
+                                'urlImage': urlslist,
+                                'imgPro': userImageUrl,
+                                'lst': latitude,
+                                'lng': longitude,
+                                'address': address,
+                                'time': DateTime.now(),
+                                'status': 'approved',
+                              });
+                              Fluttertoast.showToast(
+                                msg: 'Data added successfully....',
+                              );
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => NavBar(currentUserId: _auth.currentUser!.uid),
+                                ),
+                              );
+                            }).catchError((onError) {
+                              print(onError);
+                            });
+                          },
+                          child: const Text(
+                            'Upload',
+                            style: TextStyle(
+                              color: Colors.black,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ),
-        )
+              )
             : Stack(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(4),
-              child: GridView.builder(
-                itemCount: _image.length + 1,
-                gridDelegate:
-                const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                ),
-                itemBuilder: (context, index) {
-                  return index == 0
-                      ? Center(
-                    child: IconButton(
-                      icon: const Icon(Icons.add),
-                      onPressed: () {
-                        !uploading
-                            ? chooseImage(ImageSource.gallery)
-                            : null;
-                        // Add functionality for adding images from gallery
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    child: GridView.builder(
+                      itemCount: _image.length + 1,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                      ),
+                      itemBuilder: (context, index) {
+                        return index == 0
+                            ? Center(
+                                child: IconButton(
+                                  icon: const Icon(Icons.add),
+                                  onPressed: () {
+                                    !uploading
+                                        ? chooseImage(ImageSource.gallery)
+                                        : null;
+                                  },
+                                ),
+                              )
+                            : Container(
+                                margin: const EdgeInsets.all(3),
+                                decoration: BoxDecoration(
+                                  image: DecorationImage(
+                                    image: FileImage(_image[index - 1]),
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              );
                       },
                     ),
-                  )
-                      : Container(
-                    margin: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: FileImage(_image[index - 1]),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            uploading
-                ? Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Uploading...',
-                    style: TextStyle(fontSize: 20),
                   ),
-                  const SizedBox(
-                    height: 10,
-                  ),
-                  CircularProgressIndicator(
-                    value: val,
-                    valueColor:
-                    const AlwaysStoppedAnimation<Color>(
-                      Colors.green,
-                    ),
-                  ),
+                  uploading
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text(
+                                'Uploading...',
+                                style: TextStyle(fontSize: 20),
+                              ),
+                              const SizedBox(
+                                height: 10,
+                              ),
+                              CircularProgressIndicator(
+                                value: val,
+                                valueColor: const AlwaysStoppedAnimation<Color>(
+                                  Colors.green,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Container(),
                 ],
               ),
-            )
-                : Container(),
-          ],
-        ),
       ),
     );
   }
