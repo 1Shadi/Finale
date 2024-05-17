@@ -13,7 +13,6 @@ class ProfileScreen extends StatefulWidget {
   final String userId;
   final String status;
 
-
   const ProfileScreen({super.key, required this.userId, required this.status});
 
   @override
@@ -29,6 +28,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.initState();
     getUserInfo();
   }
+
   Future<void> _updateUserName(String newUserName, String newUserNumber) async {
     try {
       await FirebaseFirestore.instance
@@ -60,7 +60,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               TextField(
                 controller: _nameController,
-                decoration: const InputDecoration(hintText: 'Enter new username'),
+                decoration:
+                    const InputDecoration(hintText: 'Enter new username'),
               ),
               const SizedBox(height: 20),
               TextButton(
@@ -77,7 +78,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onPressed: () async {
                   newName = _nameController.text.trim();
                   if (_selectedImage != null) {
-                    String imageUrl = await uploadProfilePicture(_selectedImage!);
+                    String imageUrl =
+                        await uploadProfilePicture(_selectedImage!);
                     await FirebaseFirestore.instance
                         .collection('users')
                         .doc(widget.userId)
@@ -96,7 +98,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       },
     );
   }
-
 
   Future<void> getUserInfo() async {
     try {
@@ -166,9 +167,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-
-
-
   Future<File?> _getImageFromGallery() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
@@ -183,9 +181,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<String> uploadProfilePicture(File imageFile) async {
     try {
       final firebase_storage.Reference storageRef =
-      firebase_storage.FirebaseStorage.instance.ref().child(
-        'userImages/${DateTime.now().millisecondsSinceEpoch}.jpg',
-      );
+          firebase_storage.FirebaseStorage.instance.ref().child(
+                'userImages/${DateTime.now().millisecondsSinceEpoch}.jpg',
+              );
 
       final firebase_storage.UploadTask uploadTask = storageRef.putFile(
         imageFile,
@@ -215,7 +213,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (snapshot.docs.isNotEmpty) {
         for (final doc in snapshot.docs) {
           String itemId = doc.id;
-          await FirebaseFirestore.instance.collection('items').doc(itemId).update({
+          await FirebaseFirestore.instance
+              .collection('items')
+              .doc(itemId)
+              .update({
             'userName': newName ?? oldName,
             'imgPro': adUserImageUrl,
           });
@@ -225,6 +226,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       print('Error updating user info in items: $e');
     }
   }
+
   void _logoutUser() {
     showDialog(
       context: context,
@@ -242,7 +244,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(); // Close the dialog
-                Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
+                Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const LoginScreen()));
               },
               child: const Text('Logout'),
             ),
@@ -289,12 +294,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             IconButton(
               onPressed: _editProfile,
               icon: const Icon(Icons.edit),
-            ), IconButton(
-              onPressed:_logoutUser,
+            ),
+            IconButton(
+              onPressed: _logoutUser,
               icon: const Icon(Icons.logout),
             ),
-
-
           ],
         ),
         body: Padding(
@@ -325,7 +329,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         itemCount: snapshot.data!.docs.length,
                         itemBuilder: (BuildContext context, int index) {
                           final item =
-                          items[index].data() as Map<String, dynamic>;
+                              items[index].data() as Map<String, dynamic>;
                           return ListViewWidget(
                             docId: items[index].id,
                             itemColor: item['itemColor'] ?? '',
@@ -342,7 +346,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             lat: item['lat'] ?? 0.0,
                             lng: item['lng'] ?? 0.0,
                             address: item['address'] ?? '',
-                            userNumber: item['userNumber'] ?? '', currentUser: widget.userId,
+                            userNumber: item['userNumber'] ?? '',
+                            currentUser: widget.userId,
                           );
                         },
                       );
